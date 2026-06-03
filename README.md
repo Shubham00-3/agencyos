@@ -31,7 +31,9 @@ once their deal has closed.
    1. `supabase/migrations/0001_init.sql` — tables, helper functions, RLS, storage bucket.
    2. `supabase/migrations/0002_credentials_perms.sql` — credential policy hardening.
    3. `supabase/migrations/0003_readonly_ceo_storage_scope.sql` — scoped attachment storage.
-   4. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
+   4. `supabase/migrations/0004_task_uploaded_status.sql` — adds the Uploaded task state.
+   5. `supabase/migrations/0005_move_uploaded_tasks.sql` — migrates legacy task review states.
+   6. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
 
    > Run each whole file in the SQL editor (not piecemeal) so the dollar-quoted
    > functions parse correctly.

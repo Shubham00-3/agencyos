@@ -45,9 +45,9 @@ All accounts use the password **`password123`**.
    (WordPress + hosting). Open a project → **Brief** (competitors, SEO, colours)
    → **Add task**, assign to the designer.
 4. **Designer** — only their project shows. Open a task → **upload a file** →
-   move to **In review** → leave a **comment**. (No credentials tab for them.)
-5. **Back to PA/CEO** — the dashboard **Recent activity** feed and the "In
-   review" count update. "Accountability without asking anyone."
+   move to **Uploaded** → leave a **comment**. (No credentials tab for them.)
+5. **Back to PA/CEO** — the dashboard **Recent activity** feed and the uploaded
+   work count update. "Accountability without asking anyone."
 6. **System Admin** — open a project → **Mark live**. Logged and done.
 
 ## What's intentionally out of scope

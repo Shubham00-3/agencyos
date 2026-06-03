@@ -67,15 +67,17 @@ export const CLIENT_STATUS: Record<ClientStatus, StatusStyle> = {
 };
 
 export const TASK_STATUS: Record<TaskStatus, StatusStyle> = {
-  todo: { label: "To do", cls: "b-todo", dot: "var(--ink-3)" },
+  todo: { label: "Pending", cls: "b-todo", dot: "var(--ink-3)" },
   in_progress: { label: "In progress", cls: "b-prog", dot: "var(--brand)" },
+  uploaded: { label: "Uploaded", cls: "b-rev", dot: "var(--amber)" },
   in_review: { label: "In review", cls: "b-rev", dot: "var(--amber)" },
-  done: { label: "Done", cls: "b-live", dot: "var(--green)" },
+  done: { label: "Completed", cls: "b-live", dot: "var(--green)" },
 };
 
 export const TASK_STATUS_ORDER: TaskStatus[] = [
   "todo",
   "in_progress",
+  "uploaded",
   "in_review",
   "done",
 ];

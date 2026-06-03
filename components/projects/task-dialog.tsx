@@ -338,27 +338,27 @@ export function TaskDialog({
             return (
               <div className="rounded-lg border bg-muted/30 p-3">
                 <p className="mb-2 text-sm text-muted-foreground">
-                  Done with this? Upload your files below, then send it for
-                  review.
+                  Done with this? Upload your files below, then mark it
+                  uploaded for review.
                 </p>
-                <Button size="sm" onClick={() => changeStatus("in_review")}>
+                <Button size="sm" onClick={() => changeStatus("uploaded")}>
                   <Send className="size-4" />
-                  Submit for review
+                  Mark uploaded
                 </Button>
               </div>
             );
           }
-          if (task.status === "in_review") {
+          if (task.status === "uploaded" || task.status === "in_review") {
             if (canManage) {
               return (
                 <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
                   <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-                    Ready for your review.
+                    Uploaded and ready for your review.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" onClick={() => changeStatus("done")}>
                       <Check className="size-4" />
-                      Approve — mark done
+                      Approve - mark completed
                     </Button>
                     <Button
                       size="sm"

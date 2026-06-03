@@ -17,7 +17,12 @@ export type ProjectStatus =
   | "completed"
   | "live";
 
-export type TaskStatus = "todo" | "in_progress" | "in_review" | "done";
+export type TaskStatus =
+  | "todo"
+  | "in_progress"
+  | "uploaded"
+  | "in_review"
+  | "done";
 
 export type TaskCategory = "design" | "dev" | "content" | "general";
 
