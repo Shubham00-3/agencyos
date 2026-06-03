@@ -8,11 +8,21 @@ import type {
   CommentWithAuthor,
   TaskWithAssignee,
 } from "@/app/(app)/projects/[id]/page";
-import type { TaskAttachment } from "@/lib/types";
+import type { Profile, TaskAttachment } from "@/lib/types";
 
 export default async function TasksPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
+  const canManage = can.manageTasks(profile.role);
+
+  let assignees: Profile[] = [];
+  if (canManage) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("full_name");
+    assignees = (data as Profile[]) ?? [];
+  }
 
   const { data: tasksData } = await supabase
     .from("tasks")
@@ -83,8 +93,9 @@ export default async function TasksPage() {
           tasks={tasks}
           attachmentsByTask={attachmentsByTask}
           commentsByTask={commentsByTask}
+          assignees={assignees}
           currentUserId={profile.id}
-          canManage={can.manageTasks(profile.role)}
+          canManage={canManage}
         />
       )}
     </>

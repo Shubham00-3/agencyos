@@ -66,6 +66,37 @@ export async function createClientAction(input: NewClientInput) {
   return { id: client.id as string };
 }
 
+export async function updateClientAction(
+  id: string,
+  input: {
+    business_name: string;
+    contact_name?: string;
+    phone?: string;
+    email?: string;
+    existing_website_url?: string;
+    status: "active" | "completed";
+    notes?: string;
+  },
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      business_name: input.business_name,
+      contact_name: input.contact_name || null,
+      phone: input.phone || null,
+      email: input.email || null,
+      existing_website_url: input.existing_website_url || null,
+      status: input.status,
+      notes: input.notes || null,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/clients");
+  revalidatePath(`/clients/${id}`);
+  return {};
+}
+
 export async function addCredentialAction(
   clientId: string,
   cred: CredentialInput,

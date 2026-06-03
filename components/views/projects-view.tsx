@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { ClientLogo, AvatarStack } from "@/components/design";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/page-header";
+import { useSearch, matches } from "@/components/search/search-context";
 
 const FILTERS: [ProjectStatus | "all", string][] = [
   ["all", "All"],
@@ -19,8 +20,10 @@ const FILTERS: [ProjectStatus | "all", string][] = [
 
 export function ProjectsView({ projects }: { projects: ProjectMeta[] }) {
   const [filter, setFilter] = useState<ProjectStatus | "all">("all");
-  const shown =
-    filter === "all" ? projects : projects.filter((p) => p.status === filter);
+  const { q } = useSearch();
+  const shown = projects
+    .filter((p) => filter === "all" || p.status === filter)
+    .filter((p) => matches(q, p.name, p.client?.business_name));
 
   return (
     <>

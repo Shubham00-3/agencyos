@@ -1,5 +1,5 @@
-import { Icon } from "@/components/icon";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SearchInput } from "@/components/search/search-context";
 
 export function PageHeader({
   eyebrow,
@@ -19,12 +19,7 @@ export function PageHeader({
         <h1 className="title">{title}</h1>
       </div>
       <div className="top-actions">
-        {search && (
-          <div className="search">
-            <Icon d="search" />
-            <input placeholder={search} />
-          </div>
-        )}
+        {search && <SearchInput placeholder={search} />}
         <ThemeToggle />
         {children}
       </div>

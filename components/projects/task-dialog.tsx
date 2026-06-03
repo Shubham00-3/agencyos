@@ -10,6 +10,7 @@ import {
   Send,
   CalendarClock,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import type {
@@ -20,10 +21,11 @@ import type {
 import {
   addCommentAction,
   deleteAttachmentAction,
+  updateTaskAction,
   updateTaskStatusAction,
 } from "@/app/(app)/projects/actions";
-import { TASK_STATUS_ORDER } from "@/lib/constants";
-import type { TaskStatus } from "@/lib/types";
+import { TASK_CATEGORY, TASK_STATUS_ORDER } from "@/lib/constants";
+import type { Profile, TaskCategory, TaskStatus } from "@/lib/types";
 import { formatDate, formatBytes, isOverdue, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -41,11 +43,16 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { CategoryBadge } from "@/components/status-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { TASK_STATUS } from "@/lib/constants";
 import { FileUpload } from "./file-upload";
+
+const CATEGORIES = Object.keys(TASK_CATEGORY) as TaskCategory[];
+const UNASSIGNED = "unassigned";
 
 export function TaskDialog({
   open,
@@ -54,7 +61,9 @@ export function TaskDialog({
   attachments,
   comments,
   projectId,
+  assignees = [],
   currentUserId,
+  canManage = false,
   canEditStatus,
 }: {
   open: boolean;
@@ -63,12 +72,42 @@ export function TaskDialog({
   attachments: AttachmentWithUrl[];
   comments: CommentWithAuthor[];
   projectId: string;
+  assignees?: Profile[];
   currentUserId: string;
+  canManage?: boolean;
   canEditStatus: boolean;
 }) {
   const router = useRouter();
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [eTitle, setETitle] = useState(task.title);
+  const [eDesc, setEDesc] = useState(task.description ?? "");
+  const [eCat, setECat] = useState<TaskCategory>(task.category);
+  const [eAssignee, setEAssignee] = useState<string>(
+    task.assignee?.id ?? UNASSIGNED,
+  );
+  const [eDue, setEDue] = useState<string>(task.due_date ?? "");
+
+  async function saveEdit() {
+    if (!eTitle.trim()) return toast.error("Title required");
+    setSavingEdit(true);
+    const res = await updateTaskAction({
+      task_id: task.id,
+      project_id: projectId,
+      title: eTitle.trim(),
+      description: eDesc.trim() || null,
+      category: eCat,
+      assignee_id: eAssignee === UNASSIGNED ? null : eAssignee,
+      due_date: eDue || null,
+    });
+    setSavingEdit(false);
+    if (res.error) return toast.error(res.error);
+    toast.success("Task updated");
+    setEditing(false);
+    router.refresh();
+  }
 
   async function changeStatus(status: TaskStatus) {
     const res = await updateTaskStatusAction({
@@ -111,27 +150,122 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <CategoryBadge category={task.category} />
-            {task.due_date && (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-xs",
-                  isOverdue(task.due_date) && task.status !== "done"
-                    ? "text-destructive font-medium"
-                    : "text-muted-foreground",
-                )}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CategoryBadge category={task.category} />
+              {task.due_date && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs",
+                    isOverdue(task.due_date) && task.status !== "done"
+                      ? "text-destructive font-medium"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  <CalendarClock className="size-3.5" />
+                  {formatDate(task.due_date)}
+                </span>
+              )}
+            </div>
+            {canManage && !editing && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1.5"
+                onClick={() => setEditing(true)}
               >
-                <CalendarClock className="size-3.5" />
-                {formatDate(task.due_date)}
-              </span>
+                <Pencil className="size-3.5" />
+                Edit
+              </Button>
             )}
           </div>
           <DialogTitle className="text-left">{task.title}</DialogTitle>
         </DialogHeader>
 
-        {task.description && (
-          <p className="text-sm text-muted-foreground">{task.description}</p>
+        {editing ? (
+          <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="e-title">Title</Label>
+              <Input
+                id="e-title"
+                value={eTitle}
+                onChange={(e) => setETitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="e-desc">Description</Label>
+              <Textarea
+                id="e-desc"
+                value={eDesc}
+                onChange={(e) => setEDesc(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Category</Label>
+                <Select
+                  value={eCat}
+                  onValueChange={(v) => setECat(v as TaskCategory)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {TASK_CATEGORY[c].label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="e-due">Due date</Label>
+                <Input
+                  id="e-due"
+                  type="date"
+                  value={eDue}
+                  onChange={(e) => setEDue(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Assignee</Label>
+              <Select
+                value={eAssignee}
+                onValueChange={(v) => setEAssignee(v ?? UNASSIGNED)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                  {assignees.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button size="sm" onClick={saveEdit} disabled={savingEdit}>
+                {savingEdit && <Loader2 className="size-4 animate-spin" />}
+                Save
+              </Button>
+            </div>
+          </div>
+        ) : (
+          task.description && (
+            <p className="text-sm text-muted-foreground">{task.description}</p>
+          )
         )}
 
         <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">

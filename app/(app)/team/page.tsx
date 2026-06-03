@@ -1,11 +1,10 @@
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/permissions";
-import { ROLE_LABELS } from "@/lib/constants";
 import type { Profile } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
-import { PersonAvatar } from "@/components/design";
 import { AddMemberDialog } from "@/components/team/add-member-dialog";
+import { TeamView, type TeamMember } from "@/components/views/team-view";
 
 export default async function TeamPage() {
   const profile = await requireProfile();
@@ -22,6 +21,14 @@ export default async function TeamPage() {
     if (t.assignee_id) counts[t.assignee_id] = (counts[t.assignee_id] ?? 0) + 1;
   });
 
+  const members: TeamMember[] = profiles.map((m) => ({
+    id: m.id,
+    full_name: m.full_name,
+    avatar_color: m.avatar_color,
+    role: m.role,
+    count: counts[m.id] ?? 0,
+  }));
+
   return (
     <>
       <PageHeader
@@ -31,23 +38,7 @@ export default async function TeamPage() {
       >
         {canManage && <AddMemberDialog />}
       </PageHeader>
-
-      <div className="grid grid-tight">
-        {profiles.map((m) => (
-          <div className="card teamcard" key={m.id}>
-            <PersonAvatar name={m.full_name} color={m.avatar_color} size={48} />
-            <div className="min0">
-              <div className="fw6">{m.full_name}</div>
-              <div className="muted-sm">{ROLE_LABELS[m.role]}</div>
-              <div className="muted-sm" style={{ marginTop: 4 }}>
-                {counts[m.id] ?? 0} active task
-                {(counts[m.id] ?? 0) !== 1 ? "s" : ""}
-              </div>
-            </div>
-          </div>
-        ))}
-        {canManage && <AddMemberDialog variant="ghost" />}
-      </div>
+      <TeamView members={members} canManage={canManage} />
     </>
   );
 }

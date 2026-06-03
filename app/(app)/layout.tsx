@@ -1,6 +1,7 @@
 import { requireProfile } from "@/lib/auth";
 import { navForRole } from "@/lib/permissions";
 import { Rail } from "@/components/app-shell/rail";
+import { SearchProvider } from "@/components/search/search-context";
 
 export default async function AppLayout({
   children,
@@ -14,7 +15,9 @@ export default async function AppLayout({
   return (
     <div className="app">
       <Rail profile={profile} nav={nav} demoMode={demoMode} />
-      <main className="main">{children}</main>
+      <SearchProvider>
+        <main className="main">{children}</main>
+      </SearchProvider>
     </div>
   );
 }

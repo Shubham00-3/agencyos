@@ -58,6 +58,53 @@ export async function createTaskAction(input: {
   return {};
 }
 
+export async function updateTaskAction(input: {
+  task_id: string;
+  project_id: string;
+  title: string;
+  description?: string | null;
+  category: TaskCategory;
+  assignee_id?: string | null;
+  due_date?: string | null;
+}) {
+  const { supabase } = await authed();
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      title: input.title,
+      description: input.description || null,
+      category: input.category,
+      assignee_id: input.assignee_id || null,
+      due_date: input.due_date || null,
+    })
+    .eq("id", input.task_id);
+  if (error) return { error: error.message };
+  revalidatePath(`/projects/${input.project_id}`);
+  revalidatePath("/tasks");
+  return {};
+}
+
+export async function updateProjectAction(input: {
+  project_id: string;
+  name: string;
+  description?: string | null;
+  brief?: Record<string, string> | null;
+}) {
+  const { supabase } = await authed();
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      name: input.name,
+      description: input.description || null,
+      brief: input.brief ?? null,
+    })
+    .eq("id", input.project_id);
+  if (error) return { error: error.message };
+  revalidatePath(`/projects/${input.project_id}`);
+  revalidatePath("/projects");
+  return {};
+}
+
 export async function updateTaskStatusAction(input: {
   task_id: string;
   project_id: string;

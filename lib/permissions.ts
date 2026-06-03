@@ -11,7 +11,9 @@ export const can = {
   // Create + assign tasks to anyone.
   manageTasks: (role: UserRole) => isStaff(role),
   // View and edit stored WordPress / hosting credentials.
-  viewCredentials: (role: UserRole) => isStaff(role),
+  // Tightened: PA (who enters them) + System Admin (who goes live) only —
+  // not the CEO. Least-privilege for secrets.
+  viewCredentials: (role: UserRole) => role === "pa" || role === "admin",
   // Add / manage team members (auth accounts).
   manageTeam: (role: UserRole) => role === "pa" || role === "admin",
   // Flip a project to "live".

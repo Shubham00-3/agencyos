@@ -22,6 +22,7 @@ import { ProjectStatusBadge } from "@/components/status-badge";
 import { KanbanCard } from "@/components/board/kanban-card";
 import { AddTaskDialog } from "@/components/projects/add-task-dialog";
 import { ManageMembersDialog } from "@/components/projects/manage-members-dialog";
+import { EditProjectDialog } from "@/components/projects/edit-project-dialog";
 
 const STATUSES = Object.keys(PROJECT_STATUS) as ProjectStatus[];
 
@@ -64,6 +65,7 @@ export function ProjectDetailView({
 }) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
+  const [mine, setMine] = useState(false);
 
   async function setStatus(status: ProjectStatus) {
     const res = await setProjectStatusAction({ project_id: project.id, status });
@@ -119,6 +121,14 @@ export function ProjectDetailView({
                 </option>
               ))}
             </select>
+          )}
+          {canManage && (
+            <EditProjectDialog
+              projectId={project.id}
+              name={project.name}
+              description={project.description}
+              brief={project.brief}
+            />
           )}
           {canManage && (
             <ManageMembersDialog
@@ -219,9 +229,33 @@ export function ProjectDetailView({
         );
       })()}
 
+      <div className="filterbar" style={{ marginBottom: 6 }}>
+        <div className="chips">
+          <button
+            className={"chip" + (!mine ? " on" : "")}
+            onClick={() => setMine(false)}
+          >
+            All tasks
+          </button>
+          <button
+            className={"chip" + (mine ? " on" : "")}
+            onClick={() => setMine(true)}
+          >
+            My tasks
+            <span className="c">
+              {tasks.filter((t) => t.assignee?.id === currentUserId).length}
+            </span>
+          </button>
+        </div>
+      </div>
+
       <div className="board board-inset">
         {TASK_STATUS_ORDER.map((st) => {
-          const group = tasks.filter((t) => t.status === st);
+          const group = tasks.filter(
+            (t) =>
+              t.status === st &&
+              (!mine || t.assignee?.id === currentUserId),
+          );
           const s = TASK_STATUS[st];
           return (
             <div className="bcol" key={st}>
@@ -238,7 +272,9 @@ export function ProjectDetailView({
                     projectId={project.id}
                     attachments={attachmentsByTask[t.id] ?? []}
                     comments={commentsByTask[t.id] ?? []}
+                    assignees={team}
                     currentUserId={currentUserId}
+                    canManage={canManage}
                     canEditStatus={
                       canManage || t.assignee?.id === currentUserId
                     }

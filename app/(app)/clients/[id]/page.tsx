@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ClientLogo } from "@/components/design";
 import { ClientStatusBadge, ProjectStatusBadge } from "@/components/status-badge";
 import { CredentialsVault } from "@/components/clients/credentials-vault";
+import { EditClientDialog } from "@/components/clients/edit-client-dialog";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 
 export default async function ClientDetailPage({
@@ -97,6 +98,7 @@ export default async function ClientDetailPage({
               Email
             </a>
           )}
+          {can.manageClients(profile.role) && <EditClientDialog client={c} />}
           {can.manageProjects(profile.role) && (
             <NewProjectDialog
               clients={[{ id: c.id, business_name: c.business_name }]}

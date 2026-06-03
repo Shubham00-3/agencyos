@@ -6,6 +6,7 @@ import { Icon } from "@/components/icon";
 import { ClientLogo } from "@/components/design";
 import { ClientStatusBadge } from "@/components/status-badge";
 import { AddClientDialog } from "@/components/clients/add-client-dialog";
+import { useSearch, matches } from "@/components/search/search-context";
 import type { ClientStatus } from "@/lib/types";
 
 export type ClientCard = {
@@ -32,7 +33,10 @@ export function ClientsView({
   canManage: boolean;
 }) {
   const [tab, setTab] = useState<ClientStatus | "all">("active");
-  const list = clients.filter((c) => (tab === "all" ? true : c.status === tab));
+  const { q } = useSearch();
+  const list = clients
+    .filter((c) => (tab === "all" ? true : c.status === tab))
+    .filter((c) => matches(q, c.business_name, c.contact_name, c.email));
 
   return (
     <>

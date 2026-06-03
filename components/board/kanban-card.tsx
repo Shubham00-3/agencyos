@@ -10,6 +10,7 @@ import { CategoryBadge } from "@/components/status-badge";
 import { PersonAvatar } from "@/components/design";
 import { Icon } from "@/components/icon";
 import { formatDate, isOverdue } from "@/lib/format";
+import type { Profile } from "@/lib/types";
 import { TaskDialog } from "@/components/projects/task-dialog";
 
 export function KanbanCard({
@@ -18,7 +19,9 @@ export function KanbanCard({
   comments,
   projectId,
   projectLabel,
+  assignees = [],
   currentUserId,
+  canManage = false,
   canEditStatus,
 }: {
   task: TaskWithAssignee;
@@ -26,7 +29,9 @@ export function KanbanCard({
   comments: CommentWithAuthor[];
   projectId: string;
   projectLabel?: string;
+  assignees?: Profile[];
   currentUserId: string;
+  canManage?: boolean;
   canEditStatus: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -85,7 +90,9 @@ export function KanbanCard({
         attachments={attachments}
         comments={comments}
         projectId={projectId}
+        assignees={assignees}
         currentUserId={currentUserId}
+        canManage={canManage}
         canEditStatus={canEditStatus}
       />
     </>

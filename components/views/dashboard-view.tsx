@@ -14,6 +14,7 @@ import {
 } from "@/components/design";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
+import { useSearch, matches } from "@/components/search/search-context";
 
 export type Kpis = {
   activeClients: number;
@@ -76,10 +77,12 @@ export function DashboardView({
   clients: { id: string; business_name: string }[];
 }) {
   const [filter, setFilter] = useState<ProjectStatus | "all">("all");
+  const { q } = useSearch();
   const counts: Record<string, number> = { all: projects.length };
   projects.forEach((p) => (counts[p.status] = (counts[p.status] || 0) + 1));
-  const shown =
-    filter === "all" ? projects : projects.filter((p) => p.status === filter);
+  const shown = projects
+    .filter((p) => filter === "all" || p.status === filter)
+    .filter((p) => matches(q, p.name, p.client?.business_name));
 
   return (
     <>
