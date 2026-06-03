@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 export function FileUpload({
   taskId,
   projectId,
+  buttonId,
 }: {
   taskId: string;
   projectId: string;
+  buttonId?: string;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,6 +50,7 @@ export function FileUpload({
         onChange={(e) => onFiles(e.target.files)}
       />
       <Button
+        id={buttonId}
         type="button"
         size="sm"
         variant="outline"

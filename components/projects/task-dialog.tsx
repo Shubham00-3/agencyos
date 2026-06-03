@@ -11,6 +11,10 @@ import {
   CalendarClock,
   Loader2,
   Pencil,
+  Play,
+  Check,
+  RotateCcw,
+  UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import type {
@@ -268,7 +272,11 @@ export function TaskDialog({
           )
         )}
 
-        <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+        {/* Assignee */}
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Assigned to
+          </span>
           <div className="flex items-center gap-2">
             {task.assignee ? (
               <>
@@ -283,39 +291,152 @@ export function TaskDialog({
               <span className="text-sm text-muted-foreground">Unassigned</span>
             )}
           </div>
-          <Select
-            value={task.status}
-            onValueChange={(v) => changeStatus(v as TaskStatus)}
-            disabled={!canEditStatus}
-          >
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TASK_STATUS_ORDER.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {TASK_STATUS[s].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
+
+        {/* Progress stepper */}
+        <div className="flex items-end gap-1.5">
+          {TASK_STATUS_ORDER.map((s, i) => {
+            const idx = TASK_STATUS_ORDER.indexOf(task.status);
+            const active = i <= idx;
+            return (
+              <div key={s} className="flex flex-1 flex-col items-center gap-1.5">
+                <span
+                  className={cn(
+                    "text-[10px] font-semibold",
+                    i === idx ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  {TASK_STATUS[s].label}
+                </span>
+                <div
+                  className={cn(
+                    "h-1.5 w-full rounded-full",
+                    active ? "bg-primary" : "bg-muted",
+                  )}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Guided next action */}
+        {(() => {
+          if (task.status === "todo" && canEditStatus) {
+            return (
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="mb-2 text-sm text-muted-foreground">
+                  Ready to start? Upload your work below as you go.
+                </p>
+                <Button size="sm" onClick={() => changeStatus("in_progress")}>
+                  <Play className="size-4" />
+                  Start working
+                </Button>
+              </div>
+            );
+          }
+          if (task.status === "in_progress" && canEditStatus) {
+            return (
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <p className="mb-2 text-sm text-muted-foreground">
+                  Done with this? Upload your files below, then send it for
+                  review.
+                </p>
+                <Button size="sm" onClick={() => changeStatus("in_review")}>
+                  <Send className="size-4" />
+                  Submit for review
+                </Button>
+              </div>
+            );
+          }
+          if (task.status === "in_review") {
+            if (canManage) {
+              return (
+                <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
+                  <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">
+                    Ready for your review.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => changeStatus("done")}>
+                      <Check className="size-4" />
+                      Approve — mark done
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => changeStatus("in_progress")}
+                    >
+                      <RotateCcw className="size-4" />
+                      Request changes
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+                Submitted — waiting for review. The PA will approve it or request
+                changes.
+              </div>
+            );
+          }
+          if (task.status === "done") {
+            return (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-300/60 bg-emerald-50 p-3 dark:bg-emerald-950/20">
+                <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                  <Check className="size-4" />
+                  Completed
+                </span>
+                {canManage && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => changeStatus("in_progress")}
+                  >
+                    <RotateCcw className="size-4" />
+                    Reopen
+                  </Button>
+                )}
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         <Separator />
 
-        {/* Files */}
+        {/* Uploads */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="flex items-center gap-1.5 text-sm font-medium">
               <Paperclip className="size-4 text-muted-foreground" />
-              Files ({attachments.length})
+              Uploads &amp; deliverables ({attachments.length})
             </p>
-            <FileUpload taskId={task.id} projectId={projectId} />
+            <FileUpload
+              taskId={task.id}
+              projectId={projectId}
+              buttonId={`fu-${task.id}`}
+            />
           </div>
           {attachments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No files uploaded yet.
-            </p>
+            <button
+              type="button"
+              onClick={() =>
+                (
+                  document.getElementById(
+                    `fu-${task.id}`,
+                  ) as HTMLButtonElement | null
+                )?.click()
+              }
+              className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed py-6 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              <UploadCloud className="size-6" />
+              <span className="text-sm font-medium">
+                Upload your work here
+              </span>
+              <span className="text-xs">
+                Designs, content, screenshots — drop them on this task
+              </span>
+            </button>
           ) : (
             <ul className="space-y-1.5">
               {attachments.map((a) => (
@@ -367,7 +488,7 @@ export function TaskDialog({
         <div className="space-y-3">
           <p className="flex items-center gap-1.5 text-sm font-medium">
             <MessageSquare className="size-4 text-muted-foreground" />
-            Comments ({comments.length})
+            Discussion ({comments.length})
           </p>
           {comments.map((c) => (
             <div key={c.id} className="flex gap-2">

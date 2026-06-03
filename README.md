@@ -4,7 +4,7 @@ Internal project-management & collaboration workspace for a web-development
 agency. Replaces scattered communication with one place where the team
 coordinates every website build:
 
-- **CEO** — high-level overview of project statuses + an accountability feed.
+- **CEO** — full overview and operational access across the workspace.
 - **PA** — adds clients, creates & assigns tasks, stores credentials, monitors everyone.
 - **Designer / Developer / Copywriter** — see only their assigned work, upload files, update status.
 - **System Admin** — full access incl. credentials; takes finished sites live.
@@ -27,9 +27,11 @@ once their deal has closed.
    SUPABASE_SERVICE_ROLE_KEY=...
    NEXT_PUBLIC_DEMO_MODE=true
    ```
-3. In the Supabase dashboard **SQL editor**, run the two files **in order**:
+3. In the Supabase dashboard **SQL editor**, run these files **in order**:
    1. `supabase/migrations/0001_init.sql` — tables, helper functions, RLS, storage bucket.
-   2. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
+   2. `supabase/migrations/0002_credentials_perms.sql` — credential policy hardening.
+   3. `supabase/migrations/0003_readonly_ceo_storage_scope.sql` — scoped attachment storage.
+   4. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
 
    > Run each whole file in the SQL editor (not piecemeal) so the dollar-quoted
    > functions parse correctly.
@@ -54,7 +56,7 @@ matching account — so you can demo every view. Set it to `false` for productio
 
 Access is enforced by **Postgres Row-Level Security**, not just hidden in the UI:
 
-- Staff (CEO / PA / Admin) — full read/write on clients, projects, tasks, credentials.
+- Staff (CEO / PA / Admin) — full read/write on clients, projects, tasks, and credentials.
 - Contributors — read only the projects they're a member of, update only tasks
   assigned to them, upload files; **no credential access**.
 - Only Admin can flip a project to **Live**.

@@ -13,11 +13,11 @@ export const can = {
   // View and edit stored WordPress / hosting credentials.
   // Tightened: PA (who enters them) + System Admin (who goes live) only —
   // not the CEO. Least-privilege for secrets.
-  viewCredentials: (role: UserRole) => role === "pa" || role === "admin",
+  viewCredentials: (role: UserRole) => isStaff(role),
   // Add / manage team members (auth accounts).
-  manageTeam: (role: UserRole) => role === "pa" || role === "admin",
+  manageTeam: (role: UserRole) => isStaff(role),
   // Flip a project to "live".
-  markLive: (role: UserRole) => role === "admin",
+  markLive: (role: UserRole) => role === "ceo" || role === "admin",
   // See the CEO-style portfolio overview on the dashboard.
   seeOverview: (role: UserRole) => role === "ceo" || isStaff(role),
 };

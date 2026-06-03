@@ -17,6 +17,7 @@ export default async function DashboardPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
   const canManage = can.manageProjects(profile.role);
+  const canMonitor = can.seeOverview(profile.role);
   const firstName = profile.full_name.split(" ")[0];
 
   const projects = await getProjectsMeta(supabase);
@@ -28,7 +29,7 @@ export default async function DashboardPage() {
       .select(
         "title, status, due_date, assignee:profiles!tasks_assignee_id_fkey(full_name), project:projects(name)",
       ),
-    canManage
+    canMonitor
       ? supabase
           .from("activity_log")
           .select(

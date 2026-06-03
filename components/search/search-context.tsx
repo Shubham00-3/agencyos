@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -15,12 +14,14 @@ const SearchCtx = createContext<{ q: string; setQ: (s: string) => void }>({
 });
 
 export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const [q, setQ] = useState("");
   const pathname = usePathname();
-  // Clear the query when navigating to a different page.
-  useEffect(() => {
-    setQ("");
-  }, [pathname]);
+  return (
+    <SearchStateProvider key={pathname}>{children}</SearchStateProvider>
+  );
+}
+
+function SearchStateProvider({ children }: { children: React.ReactNode }) {
+  const [q, setQ] = useState("");
   return <SearchCtx.Provider value={{ q, setQ }}>{children}</SearchCtx.Provider>;
 }
 
