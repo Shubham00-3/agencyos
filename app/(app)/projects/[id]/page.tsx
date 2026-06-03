@@ -158,6 +158,7 @@ export default async function ProjectDetailPage({
         team={team}
         memberIds={members.map((m) => m.id)}
         currentUserId={profile.id}
+        currentUserRole={profile.role}
         canManage={isStaffUser}
         canMarkLive={can.markLive(profile.role)}
       />

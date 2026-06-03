@@ -29,7 +29,7 @@ import {
   updateTaskStatusAction,
 } from "@/app/(app)/projects/actions";
 import { TASK_CATEGORY, TASK_STATUS_ORDER } from "@/lib/constants";
-import type { Profile, TaskCategory, TaskStatus } from "@/lib/types";
+import type { Profile, TaskCategory, TaskStatus, UserRole } from "@/lib/types";
 import { formatDate, formatBytes, isOverdue, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -67,8 +67,9 @@ export function TaskDialog({
   projectId,
   assignees = [],
   currentUserId,
+  currentUserRole,
   canManage = false,
-  canEditStatus,
+  canWork,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -78,8 +79,9 @@ export function TaskDialog({
   projectId: string;
   assignees?: Profile[];
   currentUserId: string;
+  currentUserRole: UserRole;
   canManage?: boolean;
-  canEditStatus: boolean;
+  canWork: boolean;
 }) {
   const router = useRouter();
   const [comment, setComment] = useState("");
@@ -321,7 +323,7 @@ export function TaskDialog({
 
         {/* Guided next action */}
         {(() => {
-          if (task.status === "todo" && canEditStatus) {
+          if (task.status === "todo" && canWork) {
             return (
               <div className="rounded-lg border bg-muted/30 p-3">
                 <p className="mb-2 text-sm text-muted-foreground">
@@ -334,7 +336,7 @@ export function TaskDialog({
               </div>
             );
           }
-          if (task.status === "in_progress" && canEditStatus) {
+          if (task.status === "in_progress" && canWork) {
             return (
               <div className="rounded-lg border bg-muted/30 p-3">
                 <p className="mb-2 text-sm text-muted-foreground">
@@ -349,7 +351,7 @@ export function TaskDialog({
             );
           }
           if (task.status === "uploaded" || task.status === "in_review") {
-            if (canManage) {
+            if (canWork) {
               return (
                 <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
                   <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">
@@ -374,8 +376,7 @@ export function TaskDialog({
             }
             return (
               <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
-                Submitted — waiting for review. The PA will approve it or request
-                changes.
+                Uploaded. Only the assignee or a developer can update this task.
               </div>
             );
           }
@@ -386,7 +387,7 @@ export function TaskDialog({
                   <Check className="size-4" />
                   Completed
                 </span>
-                {canManage && (
+                {canWork && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -411,22 +412,25 @@ export function TaskDialog({
               <Paperclip className="size-4 text-muted-foreground" />
               Uploads &amp; deliverables ({attachments.length})
             </p>
-            <FileUpload
-              taskId={task.id}
-              projectId={projectId}
-              buttonId={`fu-${task.id}`}
-            />
+            {canWork && (
+              <FileUpload
+                taskId={task.id}
+                projectId={projectId}
+                buttonId={`fu-${task.id}`}
+              />
+            )}
           </div>
           {attachments.length === 0 ? (
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                if (!canWork) return;
                 (
                   document.getElementById(
                     `fu-${task.id}`,
                   ) as HTMLButtonElement | null
-                )?.click()
-              }
+                )?.click();
+              }}
               className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed py-6 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
             >
               <UploadCloud className="size-6" />
@@ -465,7 +469,8 @@ export function TaskDialog({
                         <Download className="size-3.5" />
                       </Button>
                     )}
-                    {(a.uploaded_by === currentUserId || canEditStatus) && (
+                    {(a.uploaded_by === currentUserId ||
+                      currentUserRole === "developer") && (
                       <Button
                         size="icon"
                         variant="ghost"
@@ -510,20 +515,27 @@ export function TaskDialog({
               </div>
             </div>
           ))}
-          <form onSubmit={postComment} className="flex gap-2">
-            <Input
-              placeholder="Write a comment…"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-            <Button type="submit" size="icon" disabled={sending}>
-              {sending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
-              )}
-            </Button>
-          </form>
+          {canWork ? (
+            <form onSubmit={postComment} className="flex gap-2">
+              <Input
+                placeholder="Write a comment..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+              <Button type="submit" size="icon" disabled={sending}>
+                {sending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+              </Button>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              You can monitor this task, but only the assignee or a developer can
+              update it.
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

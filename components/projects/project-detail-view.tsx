@@ -9,7 +9,7 @@ import type {
   CommentWithAuthor,
   TaskWithAssignee,
 } from "@/app/(app)/projects/[id]/page";
-import type { Profile, ProjectBrief, ProjectStatus } from "@/lib/types";
+import type { Profile, ProjectBrief, ProjectStatus, UserRole } from "@/lib/types";
 import {
   PROJECT_STATUS,
   TASK_STATUS,
@@ -35,6 +35,7 @@ export function ProjectDetailView({
   team,
   memberIds,
   currentUserId,
+  currentUserRole,
   canManage,
   canMarkLive,
 }: {
@@ -60,6 +61,7 @@ export function ProjectDetailView({
   team: Profile[];
   memberIds: string[];
   currentUserId: string;
+  currentUserRole: UserRole;
   canManage: boolean;
   canMarkLive: boolean;
 }) {
@@ -274,9 +276,11 @@ export function ProjectDetailView({
                     comments={commentsByTask[t.id] ?? []}
                     assignees={team}
                     currentUserId={currentUserId}
+                    currentUserRole={currentUserRole}
                     canManage={canManage}
-                    canEditStatus={
-                      canManage || t.assignee?.id === currentUserId
+                    canWork={
+                      currentUserRole === "developer" ||
+                      t.assignee?.id === currentUserId
                     }
                   />
                 ))}

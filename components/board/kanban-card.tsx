@@ -10,7 +10,7 @@ import { CategoryBadge } from "@/components/status-badge";
 import { PersonAvatar } from "@/components/design";
 import { Icon } from "@/components/icon";
 import { formatDate, isOverdue } from "@/lib/format";
-import type { Profile } from "@/lib/types";
+import type { Profile, UserRole } from "@/lib/types";
 import { TaskDialog } from "@/components/projects/task-dialog";
 
 export function KanbanCard({
@@ -21,8 +21,9 @@ export function KanbanCard({
   projectLabel,
   assignees = [],
   currentUserId,
+  currentUserRole,
   canManage = false,
-  canEditStatus,
+  canWork,
 }: {
   task: TaskWithAssignee;
   attachments: AttachmentWithUrl[];
@@ -31,8 +32,9 @@ export function KanbanCard({
   projectLabel?: string;
   assignees?: Profile[];
   currentUserId: string;
+  currentUserRole: UserRole;
   canManage?: boolean;
-  canEditStatus: boolean;
+  canWork: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const over = isOverdue(task.due_date) && task.status !== "done";
@@ -92,8 +94,9 @@ export function KanbanCard({
         projectId={projectId}
         assignees={assignees}
         currentUserId={currentUserId}
+        currentUserRole={currentUserRole}
         canManage={canManage}
-        canEditStatus={canEditStatus}
+        canWork={canWork}
       />
     </>
   );
