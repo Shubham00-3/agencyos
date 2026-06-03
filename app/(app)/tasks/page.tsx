@@ -129,6 +129,7 @@ export default async function TasksPage() {
           commentsByTask={commentsByTask}
           assignees={assignees}
           currentUserId={profile.id}
+          currentUserRole={profile.role}
           canManage={canManage}
         />
       )}

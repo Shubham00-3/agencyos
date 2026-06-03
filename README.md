@@ -33,7 +33,8 @@ once their deal has closed.
    3. `supabase/migrations/0003_readonly_ceo_storage_scope.sql` — scoped attachment storage.
    4. `supabase/migrations/0004_task_uploaded_status.sql` — adds the Uploaded task state.
    5. `supabase/migrations/0005_move_uploaded_tasks.sql` — migrates legacy task review states.
-   6. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
+   6. `supabase/migrations/0006_task_worker_permissions.sql` — assignee/developer task-work rules.
+   7. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
 
    > Run each whole file in the SQL editor (not piecemeal) so the dollar-quoted
    > functions parse correctly.

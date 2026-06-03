@@ -6,7 +6,7 @@ import type {
   CommentWithAuthor,
   TaskWithAssignee,
 } from "@/app/(app)/projects/[id]/page";
-import type { Profile } from "@/lib/types";
+import type { Profile, UserRole } from "@/lib/types";
 import { TASK_STATUS, TASK_STATUS_ORDER } from "@/lib/constants";
 import { KanbanCard } from "@/components/board/kanban-card";
 import { useSearch, matches } from "@/components/search/search-context";
@@ -21,6 +21,7 @@ export function TasksBoard({
   commentsByTask,
   assignees,
   currentUserId,
+  currentUserRole,
   canManage,
 }: {
   tasks: BoardTask[];
@@ -28,6 +29,7 @@ export function TasksBoard({
   commentsByTask: Record<string, CommentWithAuthor[]>;
   assignees: Profile[];
   currentUserId: string;
+  currentUserRole: UserRole;
   canManage: boolean;
 }) {
   const { q } = useSearch();
@@ -81,8 +83,12 @@ export function TasksBoard({
                     comments={commentsByTask[t.id] ?? []}
                     assignees={assignees}
                     currentUserId={currentUserId}
+                    currentUserRole={currentUserRole}
                     canManage={canManage}
-                    canEditStatus={canManage || t.assignee?.id === currentUserId}
+                    canWork={
+                      currentUserRole === "developer" ||
+                      t.assignee?.id === currentUserId
+                    }
                   />
                 ))}
               </div>
