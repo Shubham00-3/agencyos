@@ -12,6 +12,22 @@ async function authed() {
   return { supabase, user };
 }
 
+async function ensureProjectMember(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  userId?: string | null,
+) {
+  if (!userId) return null;
+  const { error } = await supabase.from("project_members").upsert(
+    {
+      project_id: projectId,
+      user_id: userId,
+    },
+    { onConflict: "project_id,user_id" },
+  );
+  return error;
+}
+
 export async function createProjectAction(input: {
   client_id: string;
   name: string;
@@ -54,6 +70,12 @@ export async function createTaskAction(input: {
     created_by: user.id,
   });
   if (error) return { error: error.message };
+  const memberError = await ensureProjectMember(
+    supabase,
+    input.project_id,
+    input.assignee_id,
+  );
+  if (memberError) return { error: memberError.message };
   revalidatePath(`/projects/${input.project_id}`);
   return {};
 }
@@ -79,6 +101,12 @@ export async function updateTaskAction(input: {
     })
     .eq("id", input.task_id);
   if (error) return { error: error.message };
+  const memberError = await ensureProjectMember(
+    supabase,
+    input.project_id,
+    input.assignee_id,
+  );
+  if (memberError) return { error: memberError.message };
   revalidatePath(`/projects/${input.project_id}`);
   revalidatePath("/tasks");
   return {};
