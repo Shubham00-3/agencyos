@@ -132,7 +132,7 @@ export function AddClientDialog({
             <DialogTitle>Add client</DialogTitle>
             <DialogDescription>
               For a client whose deal has already closed. Credentials are
-              optional and only visible to PA, CEO and admins.
+              optional and only visible to CEO, PA and system admins.
             </DialogDescription>
           </DialogHeader>
 

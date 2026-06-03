@@ -1,66 +1,44 @@
-# AgencyOS — Permissions Model
+# AgencyOS - Permissions Model
 
 Access is enforced by **Postgres Row-Level Security (RLS)** in Supabase, not just
-hidden in the UI. The database is the real guard — even a crafted API call only
+hidden in the UI. The database is the real guard: even a crafted API call only
 returns what the signed-in user is allowed to see. The UI helpers in
 `lib/permissions.ts` mirror these rules so people only see controls they can use.
 
 ## Roles
 
-- **Staff** = `ceo`, `pa`, `admin` — broad visibility.
-- **Contributors** = `designer`, `developer`, `copywriter` — scoped to their work.
+- **Staff** = `ceo`, `pa`, `admin`, with broad operational access.
+- **Contributors** = `designer`, `developer`, `copywriter`, scoped to their work.
 
-## Currently enforced (today)
+## Currently Enforced
 
 | Capability | CEO | PA | Admin | Designer / Dev / Copywriter |
 |---|:--:|:--:|:--:|:--:|
-| See **all** projects & clients | ✅ | ✅ | ✅ | ❌ — only projects they're a **member** of |
-| See tasks | all | all | all | all tasks **on their projects** |
-| Create / edit clients | ✅ | ✅ | ✅ | ❌ |
-| Create / edit projects | ✅ | ✅ | ✅ | ❌ |
-| Create & assign tasks | ✅ | ✅ | ✅ | ❌ |
-| Update a task's status | any | any | any | **only tasks assigned to them** |
-| Upload files / comment | ✅ | ✅ | ✅ | ✅ on their projects |
-| View stored **credentials** | ✅ | ✅ | ✅ | ❌ |
-| Add team members (logins) | ❌ | ✅ | ✅ | ❌ |
-| "Mark live" | ❌ | ❌ | ✅ | ❌ |
-| Activity / monitoring feed | ✅ | ✅ | ✅ | ❌ |
-| See the team roster | ✅ | ✅ | ✅ | ✅ |
+| See all projects and clients | yes | yes | yes | no - only projects they are a member of |
+| See tasks | all | all | all | all tasks on their projects |
+| Create / edit clients | yes | yes | yes | no |
+| Create / edit projects | yes | yes | yes | no |
+| Create and assign tasks | yes | yes | yes | no |
+| Update a task status | any | any | any | only tasks assigned to them |
+| Upload files / comment | yes | yes | yes | yes, on their projects |
+| View stored credentials | yes | yes | yes | no |
+| Add team members | yes | yes | yes | no |
+| Mark live | yes | no | yes | no |
+| Activity / monitoring feed | yes | yes | yes | no |
+| See the team roster | yes | yes | yes | yes |
 
-Key guarantees already in place:
-- A contributor **cannot** see clients, projects, tasks, files or comments for
-  projects they're not assigned to.
-- **Credentials** (WordPress / hosting passwords) are hidden from all
-  contributors.
-- Contributors can only **change the status of their own** tasks.
+## Key Guarantees
 
-## Proposed tightening ("not everyone should see everything")
+- A contributor cannot see clients, projects, tasks, files, or comments for
+  projects they are not assigned to.
+- WordPress and hosting credentials are hidden from all contributors.
+- CEO, PA, and Admin have operational write access.
+- System Admin and CEO can mark a site live.
+- Attachment storage is scoped to related task/project access.
 
-Two policy changes worth making — both are judgement calls for you/your manager:
+## Implementation Notes
 
-1. **CEO becomes read-only.**
-   Today the CEO can edit clients/projects/tasks. The CEO's job is oversight, so
-   restrict to **view + their own tasks**; remove create/edit of others' work.
-
-2. **Credentials limited to PA + System Admin only** (remove CEO).
-   System passwords are sensitive; the CEO doesn't need them. The admin holds
-   them, the PA manages them.
-
-Optional, stricter (only if you want it):
-
-3. **Contributors see only their *assigned* tasks**, not the whole project board.
-   *Not recommended* — seeing the board is what makes the team collaborate, which
-   was the whole point. Listed for completeness.
-
-### What implementing #1 and #2 touches
-- New migration `0002_permissions.sql`: add a `can_write()` helper
-  (`role in ('pa','admin')`); swap it into the write policies for
-  `clients` / `projects` / `tasks`; change the `client_credentials` policy from
-  `is_staff()` to `can_write()`. CEO keeps read access via the existing `select`
-  policies.
-- `lib/permissions.ts`: `manageClients/Projects/Tasks` and `viewCredentials`
-  → PA + Admin only. (`seeOverview` stays true for CEO.)
-- UI automatically hides "New project / Add client / Add task / status controls /
-  credentials" for the CEO since it reads those helpers.
-
-Once you confirm the policy, this is a ~1 migration + small UI pass.
+- `0002_credentials_perms.sql` is overridden by `0003_readonly_ceo_storage_scope.sql`
+  so credentials are available to all staff, including CEO.
+- `0003_readonly_ceo_storage_scope.sql` scopes storage object access to the
+  related task while preserving staff operational access.
