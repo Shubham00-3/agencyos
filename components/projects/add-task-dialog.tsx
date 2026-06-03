@@ -99,11 +99,11 @@ export function AddTaskDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Task explanation</Label>
               <Textarea
                 id="description"
                 name="description"
-                placeholder="What needs to be done…"
+                placeholder="Explain exactly what needs to be done, what to upload, and any client requirements."
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
