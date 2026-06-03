@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/permissions";
 import { PageHeader, EmptyState } from "@/components/page-header";
 import { TasksBoard, type BoardTask } from "@/components/views/tasks-board";
+import { GlobalAddTaskDialog } from "@/components/projects/global-add-task-dialog";
 import type {
   AttachmentWithUrl,
   CommentWithAuthor,
@@ -10,18 +11,29 @@ import type {
 } from "@/app/(app)/projects/[id]/page";
 import type { Profile, TaskAttachment } from "@/lib/types";
 
+type TaskProjectOption = {
+  id: string;
+  name: string;
+  client: { business_name: string } | null;
+};
+
 export default async function TasksPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
   const canManage = can.manageTasks(profile.role);
 
   let assignees: Profile[] = [];
+  let projectOptions: TaskProjectOption[] = [];
   if (canManage) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("full_name");
-    assignees = (data as Profile[]) ?? [];
+    const [profilesRes, projectsRes] = await Promise.all([
+      supabase.from("profiles").select("*").order("full_name"),
+      supabase
+        .from("projects")
+        .select("id, name, client:clients(business_name)")
+        .order("created_at", { ascending: false }),
+    ]);
+    assignees = (profilesRes.data as Profile[]) ?? [];
+    projectOptions = (projectsRes.data as unknown as TaskProjectOption[]) ?? [];
   }
 
   const { data: tasksData } = await supabase
@@ -82,12 +94,34 @@ export default async function TasksPage() {
         eyebrow="All work across every project"
         title="Tasks"
         search="Search tasks…"
-      />
+      >
+        {canManage && (
+          <GlobalAddTaskDialog
+            projects={projectOptions.map((p) => ({
+              id: p.id,
+              name: p.name,
+              clientName: p.client?.business_name ?? null,
+            }))}
+            team={assignees}
+          />
+        )}
+      </PageHeader>
       {tasks.length === 0 ? (
         <EmptyState
           title="No tasks yet"
           description="Work assigned to you and your projects will show up here."
-        />
+        >
+          {canManage && (
+            <GlobalAddTaskDialog
+              projects={projectOptions.map((p) => ({
+                id: p.id,
+                name: p.name,
+                clientName: p.client?.business_name ?? null,
+              }))}
+              team={assignees}
+            />
+          )}
+        </EmptyState>
       ) : (
         <TasksBoard
           tasks={tasks}
