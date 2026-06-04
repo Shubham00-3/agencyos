@@ -52,6 +52,14 @@ export function AddTaskDialog({
   const [category, setCategory] = useState<TaskCategory>("general");
   const [assignee, setAssignee] = useState<string>(UNASSIGNED);
 
+  const categoryItems = Object.fromEntries(
+    CATEGORIES.map((c) => [c, TASK_CATEGORY[c].label]),
+  );
+  const assigneeItems: Record<string, string> = {
+    [UNASSIGNED]: "Unassigned",
+    ...Object.fromEntries(team.map((m) => [m.id, m.full_name])),
+  };
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -112,6 +120,7 @@ export function AddTaskDialog({
                 <Select
                   value={category}
                   onValueChange={(v) => setCategory(v as TaskCategory)}
+                  items={categoryItems}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -135,6 +144,7 @@ export function AddTaskDialog({
               <Select
                 value={assignee}
                 onValueChange={(v) => setAssignee(v ?? UNASSIGNED)}
+                items={assigneeItems}
               >
                 <SelectTrigger>
                   <SelectValue />

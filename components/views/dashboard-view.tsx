@@ -141,7 +141,7 @@ export function DashboardView({
         </span>
       </div>
 
-      <div className="grid">
+      <div className="cardgrid">
         {shown.map((p) => (
           <ProjectCard key={p.id} p={p} />
         ))}

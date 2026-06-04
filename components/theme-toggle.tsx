@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/icon";
 
 export function ThemeToggle() {
-  const [dark, setDark] = useState(() =>
-    typeof document === "undefined"
-      ? false
-      : document.documentElement.classList.contains("dark"),
-  );
+  // Start from a fixed value so the server and the client's first render
+  // agree; sync to the real theme after mount to avoid a hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
 
   function toggle() {
     const next = !dark;
@@ -21,7 +25,7 @@ export function ThemeToggle() {
 
   return (
     <button className="iconbtn" title="Toggle theme" onClick={toggle} type="button">
-      <Icon d={dark ? "sun" : "moon"} />
+      <Icon d={mounted && dark ? "sun" : "moon"} />
     </button>
   );
 }

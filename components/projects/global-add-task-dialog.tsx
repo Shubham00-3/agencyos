@@ -45,6 +45,17 @@ export function GlobalAddTaskDialog({
   const [category, setCategory] = useState<TaskCategory>("general");
   const [assignee, setAssignee] = useState(UNASSIGNED);
 
+  const projectItems = Object.fromEntries(
+    projects.map((p) => [p.id, [p.clientName, p.name].filter(Boolean).join(" - ")]),
+  );
+  const categoryItems = Object.fromEntries(
+    CATEGORIES.map((c) => [c, TASK_CATEGORY[c].label]),
+  );
+  const assigneeItems: Record<string, string> = {
+    [UNASSIGNED]: "Unassigned",
+    ...Object.fromEntries(team.map((m) => [m.id, m.full_name])),
+  };
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -86,7 +97,11 @@ export function GlobalAddTaskDialog({
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label>Project</Label>
-              <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "")}>
+              <Select
+                value={projectId}
+                onValueChange={(v) => setProjectId(v ?? "")}
+                items={projectItems}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
@@ -122,6 +137,7 @@ export function GlobalAddTaskDialog({
                 <Select
                   value={category}
                   onValueChange={(v) => setCategory(v as TaskCategory)}
+                  items={categoryItems}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -145,6 +161,7 @@ export function GlobalAddTaskDialog({
               <Select
                 value={assignee}
                 onValueChange={(v) => setAssignee(v ?? UNASSIGNED)}
+                items={assigneeItems}
               >
                 <SelectTrigger>
                   <SelectValue />

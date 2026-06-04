@@ -137,6 +137,11 @@ export function CredentialsVault({
                   <Select
                     value={kind}
                     onValueChange={(v) => setKind(v as CredentialKind)}
+                    items={{
+                      wordpress: "WordPress",
+                      hosting: "Hosting",
+                      other: "Other",
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />

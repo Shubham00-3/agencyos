@@ -156,7 +156,7 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 pr-8">
             <div className="flex items-center gap-2">
               <CategoryBadge category={task.category} />
               {task.due_date && (
@@ -206,15 +206,17 @@ export function TaskDialog({
                 onChange={(e) => setEDesc(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+            <div className="flex gap-3">
+              <div className="flex-1 space-y-1.5">
                 <Label>Category</Label>
                 <Select
                   value={eCat}
                   onValueChange={(v) => setECat(v as TaskCategory)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {(v) => TASK_CATEGORY[v as TaskCategory]?.label ?? "Select"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => (
@@ -225,7 +227,7 @@ export function TaskDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="flex-1 space-y-1.5">
                 <Label htmlFor="e-due">Due date</Label>
                 <Input
                   id="e-due"
@@ -241,8 +243,15 @@ export function TaskDialog({
                 value={eAssignee}
                 onValueChange={(v) => setEAssignee(v ?? UNASSIGNED)}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {(v) =>
+                      v === UNASSIGNED
+                        ? "Unassigned"
+                        : (assignees.find((m) => m.id === v)?.full_name ??
+                          "Unassigned")
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>

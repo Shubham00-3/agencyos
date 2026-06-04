@@ -278,7 +278,7 @@
 /* ---------- Main ---------- */
 .main {
   padding: 30px;
-  max-width: 1320px;
+  max-width: 1600px;
 }
 .topbar {
   display: flex;
@@ -481,7 +481,7 @@ h1.title {
 }
 
 /* grid + cards */
-.grid {
+.cardgrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 18px;
@@ -878,7 +878,7 @@ h1.title {
 /* kanban */
 .board {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 14px;
   align-items: start;
 }
@@ -962,6 +962,80 @@ h1.title {
   background: var(--surface-2);
   color: var(--ink-2);
   border: 1px solid var(--line);
+}
+
+/* Collapsible task sections (accordion) */
+.taskacc {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.accsec {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.acchead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  color: inherit;
+  transition: background 0.14s;
+}
+.acchead:hover {
+  background: var(--surface-3, rgba(127, 127, 127, 0.05));
+}
+.acchead .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.acchead .tnum {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.accchev {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  color: var(--ink-3);
+  transition: transform 0.26s ease;
+}
+.accsec.open .accchev {
+  transform: rotate(180deg);
+}
+.accpanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+.accsec.open .accpanel {
+  grid-template-rows: 1fr;
+}
+.accpanel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.acccards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  padding: 2px 16px 16px;
+}
+.accempty {
+  color: var(--ink-3);
+  font-size: 13px;
+  padding: 2px 16px 16px;
 }
 .kadd {
   margin-top: 2px;

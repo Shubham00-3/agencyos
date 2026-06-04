@@ -93,7 +93,11 @@ export function AddMemberDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Role</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
+                <Select
+                  value={role}
+                  onValueChange={(v) => setRole(v as UserRole)}
+                  items={ROLE_LABELS}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

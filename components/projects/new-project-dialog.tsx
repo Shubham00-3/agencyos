@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createProjectAction } from "@/app/(app)/projects/actions";
+import { createClientAction } from "@/app/(app)/clients/actions";
 import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+const NEW_CLIENT = "__new_client__";
+
 export function NewProjectDialog({
   clients,
   variant = "primary",
@@ -38,18 +41,40 @@ export function NewProjectDialog({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clientId, setClientId] = useState<string>("");
+  const [newClientName, setNewClientName] = useState("");
+
+  const clientItems: Record<string, string> = {
+    ...Object.fromEntries(clients.map((c) => [c.id, c.business_name])),
+    [NEW_CLIENT]: "+ Add a new client…",
+  };
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = (fd.get("name") as string)?.trim();
-    if (!name || !clientId) {
-      toast.error("Pick a client and enter a name");
-      return;
-    }
+    if (!clientId) return toast.error("Pick a client");
+    if (!name) return toast.error("Enter a project name");
+
     setLoading(true);
+
+    // Resolve the client — creating a brand-new one first if requested.
+    let resolvedClientId = clientId;
+    if (clientId === NEW_CLIENT) {
+      const businessName = newClientName.trim();
+      if (!businessName) {
+        setLoading(false);
+        return toast.error("Enter the new client's name");
+      }
+      const created = await createClientAction({ business_name: businessName });
+      if (created.error || !created.id) {
+        setLoading(false);
+        return toast.error(created.error ?? "Could not create the client");
+      }
+      resolvedClientId = created.id;
+    }
+
     const res = await createProjectAction({
-      client_id: clientId,
+      client_id: resolvedClientId,
       name,
       description: (fd.get("description") as string)?.trim() || undefined,
     });
@@ -57,6 +82,8 @@ export function NewProjectDialog({
     if (res.error) return toast.error(res.error);
     toast.success("Project created");
     setOpen(false);
+    setClientId("");
+    setNewClientName("");
     router.refresh();
     if (res.id) router.push(`/projects/${res.id}`);
   }
@@ -84,7 +111,11 @@ export function NewProjectDialog({
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label>Client</Label>
-              <Select value={clientId} onValueChange={(v) => setClientId(v ?? "")}>
+              <Select
+                value={clientId}
+                onValueChange={(v) => setClientId(v ?? "")}
+                items={clientItems}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
@@ -94,8 +125,20 @@ export function NewProjectDialog({
                       {c.business_name}
                     </SelectItem>
                   ))}
+                  <SelectItem value={NEW_CLIENT}>
+                    + Add a new client…
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              {clientId === NEW_CLIENT && (
+                <Input
+                  autoFocus
+                  value={newClientName}
+                  onChange={(e) => setNewClientName(e.target.value)}
+                  placeholder="New client business name"
+                  className="mt-2"
+                />
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="name">Project name</Label>

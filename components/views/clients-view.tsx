@@ -59,7 +59,7 @@ export function ClientsView({
         </div>
       </div>
 
-      <div className="grid">
+      <div className="cardgrid">
         {list.map((c) => (
           <Link className="card" key={c.id} href={`/clients/${c.id}`}>
             <div className="card-top">

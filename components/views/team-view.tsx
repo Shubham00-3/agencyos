@@ -27,7 +27,7 @@ export function TeamView({
   );
 
   return (
-    <div className="grid grid-tight">
+    <div className="cardgrid grid-tight">
       {list.map((m) => (
         <div className="card teamcard" key={m.id}>
           <PersonAvatar name={m.full_name} color={m.avatar_color} size={48} />

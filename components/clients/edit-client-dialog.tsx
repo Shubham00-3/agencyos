@@ -114,6 +114,7 @@ export function EditClientDialog({ client }: { client: Client }) {
               <Select
                 value={status}
                 onValueChange={(v) => setStatus(v as ClientStatus)}
+                items={{ active: "Active", completed: "Completed" }}
               >
                 <SelectTrigger>
                   <SelectValue />
