@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -467,16 +467,19 @@ export function TaskDialog({
                   </div>
                   <div className="flex items-center gap-1">
                     {a.url && (
-                      <Button
-                        render={
-                          <a href={a.url} target="_blank" rel="noreferrer" download />
-                        }
-                        size="icon"
-                        variant="ghost"
-                        className="size-7"
+                      <a
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className={cn(
+                          buttonVariants({ size: "icon", variant: "ghost" }),
+                          "size-7",
+                        )}
+                        aria-label={`Download ${a.file_name}`}
                       >
                         <Download className="size-3.5" />
-                      </Button>
+                      </a>
                     )}
                     {(a.uploaded_by === currentUserId ||
                       currentUserRole === "developer") && (

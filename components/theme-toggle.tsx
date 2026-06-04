@@ -1,22 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Icon } from "@/components/icon";
 
-export function ThemeToggle() {
-  // Start from a fixed value so the server and the client's first render
-  // agree; sync to the real theme after mount to avoid a hydration mismatch.
-  const [mounted, setMounted] = useState(false);
-  const [dark, setDark] = useState(false);
+function subscribeTheme(callback: () => void) {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  window.addEventListener("storage", callback);
 
-  useEffect(() => {
-    setMounted(true);
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+  return () => {
+    observer.disconnect();
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function getThemeSnapshot() {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getServerThemeSnapshot() {
+  return false;
+}
+
+export function ThemeToggle() {
+  const dark = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot,
+  );
 
   function toggle() {
     const next = !dark;
-    setDark(next);
     document.documentElement.classList.toggle("dark", next);
     try {
       localStorage.setItem("theme", next ? "dark" : "light");
@@ -25,7 +42,7 @@ export function ThemeToggle() {
 
   return (
     <button className="iconbtn" title="Toggle theme" onClick={toggle} type="button">
-      <Icon d={mounted && dark ? "sun" : "moon"} />
+      <Icon d={dark ? "sun" : "moon"} />
     </button>
   );
 }
