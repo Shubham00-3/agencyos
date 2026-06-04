@@ -20,6 +20,8 @@ export const can = {
   markLive: (role: UserRole) => role === "ceo" || role === "admin",
   // See the CEO-style portfolio overview on the dashboard.
   seeOverview: (role: UserRole) => role === "ceo" || isStaff(role),
+  // Full task visibility without task-management controls.
+  seeAllTasks: (role: UserRole) => isStaff(role) || role === "developer",
 };
 
 export type NavItem = {

@@ -21,6 +21,7 @@ export default async function TasksPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
   const canManage = can.manageTasks(profile.role);
+  const canSeeAllTasks = can.seeAllTasks(profile.role);
 
   let assignees: Profile[] = [];
   let projectOptions: TaskProjectOption[] = [];
@@ -43,8 +44,8 @@ export default async function TasksPage() {
     )
     .order("due_date", { ascending: true, nullsFirst: false });
 
-  // Contributors only see tasks assigned to them; staff see everything.
-  if (!canManage) {
+  // Staff and developers see every task; other contributors see assigned work.
+  if (!canSeeAllTasks) {
     taskQuery = taskQuery.eq("assignee_id", profile.id);
   }
 
@@ -140,6 +141,7 @@ export default async function TasksPage() {
           currentUserId={profile.id}
           currentUserRole={profile.role}
           canManage={canManage}
+          canSeeAllTasks={canSeeAllTasks}
         />
       )}
     </>

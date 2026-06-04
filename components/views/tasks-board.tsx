@@ -24,6 +24,7 @@ export function TasksBoard({
   currentUserId,
   currentUserRole,
   canManage,
+  canSeeAllTasks,
 }: {
   tasks: BoardTask[];
   attachmentsByTask: Record<string, AttachmentWithUrl[]>;
@@ -32,6 +33,7 @@ export function TasksBoard({
   currentUserId: string;
   currentUserRole: UserRole;
   canManage: boolean;
+  canSeeAllTasks: boolean;
 }) {
   const { q } = useSearch();
   const [mine, setMine] = useState(false);
@@ -48,7 +50,7 @@ export function TasksBoard({
 
   return (
     <>
-      {canManage && (
+      {canSeeAllTasks && (
         <div className="filterbar" style={{ marginTop: 4 }}>
           <div className="chips">
             <button

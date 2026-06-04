@@ -35,9 +35,10 @@ export const ALL_ROLES: UserRole[] = [
   "admin",
 ];
 
-// "Staff" = full visibility over clients, projects, tasks and credentials.
+// "Staff" = full management access over clients, projects, tasks and credentials.
 export const STAFF_ROLES: UserRole[] = ["ceo", "pa", "admin"];
-// Contributors only see work assigned to them on projects they belong to.
+// Contributors do project work. Developers have full task visibility; designers
+// and copywriters only see assigned tasks.
 export const CONTRIBUTOR_ROLES: UserRole[] = [
   "designer",
   "developer",

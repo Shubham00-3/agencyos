@@ -16,7 +16,7 @@ returns what the signed-in user is allowed to see. The UI helpers in
 | Capability | CEO | PA | Admin | Developer | Designer / Copywriter |
 |---|:--:|:--:|:--:|:--:|:--:|
 | See all projects and clients | yes | yes | yes | yes | no - only assigned projects |
-| See tasks | all | all | all | all | assigned/project tasks only |
+| See tasks | all | all | all | all | assigned tasks only |
 | Create / edit clients | yes | yes | yes | no | no |
 | Create / edit projects | yes | yes | yes | no | no |
 | Create and assign tasks | yes | yes | yes | no | no |
@@ -33,8 +33,10 @@ returns what the signed-in user is allowed to see. The UI helpers in
 ## Key Guarantees
 
 - If PA assigns a design task to a designer, only that designer and developers
-  can work on that task.
+  can see and work on that task.
 - Developers can work on every task, regardless of category or assignee.
+- Designers and copywriters cannot see other people's tasks, even when they are
+  members of the same project.
 - PA/admin/CEO can create, assign, edit, and monitor tasks, but they do not get
   worker controls unless they are assigned to that task.
 - Attachment uploads, comments, and task status updates follow the same
@@ -49,3 +51,5 @@ returns what the signed-in user is allowed to see. The UI helpers in
   related task while preserving staff operational access.
 - `0006_task_worker_permissions.sql` enforces the assignee-or-developer work
   rule for direct database/API access.
+- `0007_task_visibility_scope.sql` removes project-member-wide task reads for
+  non-developer contributors.

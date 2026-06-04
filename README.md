@@ -6,7 +6,8 @@ coordinates every website build:
 
 - **CEO** — full overview and operational access across the workspace.
 - **PA** — adds clients, creates & assigns tasks, stores credentials, monitors everyone.
-- **Designer / Developer / Copywriter** — see only their assigned work, upload files, update status.
+- **Designer / Copywriter** — see only their assigned work, upload files, update status.
+- **Developer** — can see and work on every task across every project.
 - **System Admin** — full access incl. credentials; takes finished sites live.
 
 Lead generation lives elsewhere (GoHighLevel) — a client only enters AgencyOS
@@ -34,7 +35,8 @@ once their deal has closed.
    4. `supabase/migrations/0004_task_uploaded_status.sql` — adds the Uploaded task state.
    5. `supabase/migrations/0005_move_uploaded_tasks.sql` — migrates legacy task review states.
    6. `supabase/migrations/0006_task_worker_permissions.sql` — assignee/developer task-work rules.
-   7. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
+   7. `supabase/migrations/0007_task_visibility_scope.sql` — restricts contributor task visibility.
+   8. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
 
    > Run each whole file in the SQL editor (not piecemeal) so the dollar-quoted
    > functions parse correctly.
@@ -60,9 +62,10 @@ matching account — so you can demo every view. Set it to `false` for productio
 Access is enforced by **Postgres Row-Level Security**, not just hidden in the UI:
 
 - Staff (CEO / PA / Admin) — full read/write on clients, projects, tasks, and credentials.
-- Contributors — read only the projects they're a member of, update only tasks
-  assigned to them, upload files; **no credential access**.
-- Only Admin can flip a project to **Live**.
+- Developers — read and work on every task; **no credential access**.
+- Other contributors — read only the projects they're a member of, see and update
+  only tasks assigned to them, upload files; **no credential access**.
+- CEO and System Admin can flip a project to **Live**.
 
 ## Project structure
 
