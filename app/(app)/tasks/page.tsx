@@ -36,12 +36,19 @@ export default async function TasksPage() {
     projectOptions = (projectsRes.data as unknown as TaskProjectOption[]) ?? [];
   }
 
-  const { data: tasksData } = await supabase
+  let taskQuery = supabase
     .from("tasks")
     .select(
       "*, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_color), project:projects(id, name, client:clients(business_name))",
     )
     .order("due_date", { ascending: true, nullsFirst: false });
+
+  // Contributors only see tasks assigned to them; staff see everything.
+  if (!canManage) {
+    taskQuery = taskQuery.eq("assignee_id", profile.id);
+  }
+
+  const { data: tasksData } = await taskQuery;
 
   const raw =
     (tasksData as unknown as (TaskWithAssignee & {
@@ -91,7 +98,9 @@ export default async function TasksPage() {
   return (
     <>
       <PageHeader
-        eyebrow="All work across every project"
+        eyebrow={
+          canManage ? "All work across every project" : "Tasks assigned to you"
+        }
         title="Tasks"
         search="Search tasks…"
       >

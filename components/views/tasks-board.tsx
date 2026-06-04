@@ -48,25 +48,27 @@ export function TasksBoard({
 
   return (
     <>
-      <div className="filterbar" style={{ marginTop: 4 }}>
-        <div className="chips">
-          <button
-            className={"chip" + (!mine ? " on" : "")}
-            onClick={() => setMine(false)}
-          >
-            All tasks
-          </button>
-          <button
-            className={"chip" + (mine ? " on" : "")}
-            onClick={() => setMine(true)}
-          >
-            My tasks
-            <span className="c">
-              {tasks.filter((t) => t.assignee?.id === currentUserId).length}
-            </span>
-          </button>
+      {canManage && (
+        <div className="filterbar" style={{ marginTop: 4 }}>
+          <div className="chips">
+            <button
+              className={"chip" + (!mine ? " on" : "")}
+              onClick={() => setMine(false)}
+            >
+              All tasks
+            </button>
+            <button
+              className={"chip" + (mine ? " on" : "")}
+              onClick={() => setMine(true)}
+            >
+              My tasks
+              <span className="c">
+                {tasks.filter((t) => t.assignee?.id === currentUserId).length}
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       <div className="taskacc">
         {TASK_STATUS_ORDER.map((st) => {
           const group = visible.filter((t) => t.status === st);
