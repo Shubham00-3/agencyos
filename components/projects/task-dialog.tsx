@@ -336,7 +336,8 @@ export function TaskDialog({
             return (
               <div className="rounded-lg border bg-muted/30 p-3">
                 <p className="mb-2 text-sm text-muted-foreground">
-                  Ready to start? Upload your work below as you go.
+                  Ready to start? Upload files below as you go - photos, PDFs,
+                  Word docs, ZIPs, and other deliverables are supported.
                 </p>
                 <Button size="sm" onClick={() => changeStatus("in_progress")}>
                   <Play className="size-4" />
@@ -444,10 +445,11 @@ export function TaskDialog({
             >
               <UploadCloud className="size-6" />
               <span className="text-sm font-medium">
-                Upload your work here
+                Upload files here
               </span>
               <span className="text-xs">
-                Designs, content, screenshots — drop them on this task
+                Photos, PDFs, Word docs, ZIPs, screenshots, designs, and other
+                deliverables
               </span>
             </button>
           ) : (

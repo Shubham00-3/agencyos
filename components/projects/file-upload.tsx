@@ -46,6 +46,7 @@ export function FileUpload({
         ref={inputRef}
         type="file"
         multiple
+        aria-label="Upload any file type"
         className="hidden"
         onChange={(e) => onFiles(e.target.files)}
       />
@@ -62,7 +63,7 @@ export function FileUpload({
         ) : (
           <Upload className="size-4" />
         )}
-        Upload files
+        Upload any file
       </Button>
     </>
   );
