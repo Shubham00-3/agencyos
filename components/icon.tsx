@@ -92,6 +92,36 @@ const ICONS: Record<string, JSX.Element> = {
   rocket: (
     <path d="M5 15c-1 1-1.5 4-1.5 4s3-.5 4-1.5M9 13l2 2M14.5 4.5c2.5-.5 5 0 5 0s.5 2.5 0 5c-.7 3.4-4 6-4 6l-3-3-3-3s2.6-3.3 6-4z" />
   ),
+  selector: <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />,
+  activity: <path d="M3 12h4l3 8 4-16 3 8h4" />,
+  hourglass: (
+    <path d="M7 3h10M7 21h10M7 3c0 4 4 5 5 6 1-1 5-2 5-6M7 21c0-4 4-5 5-6 1 1 5 2 5 6" />
+  ),
+  clock: (
+    <g>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </g>
+  ),
+  doc: (
+    <g>
+      <path d="M6 3h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+      <path d="M13 3v5h5" />
+    </g>
+  ),
+  droplet: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />,
+  note: (
+    <g>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M8 9h8M8 13h8M8 17h5" />
+    </g>
+  ),
+  user: (
+    <g>
+      <circle cx="12" cy="8.5" r="3.5" />
+      <path d="M5.5 20c0-3.6 3-5.5 6.5-5.5s6.5 1.9 6.5 5.5" />
+    </g>
+  ),
 };
 
 export function Icon({ d, size }: { d: string; size?: number }) {

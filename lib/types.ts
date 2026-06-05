@@ -91,6 +91,7 @@ export interface Task {
   assignee_id: string | null;
   status: TaskStatus;
   due_date: string | null;
+  change_request: string | null;
   created_by: string | null;
   completed_at: string | null;
   created_at: string;

@@ -25,6 +25,7 @@ import type {
 import {
   addCommentAction,
   deleteAttachmentAction,
+  requestTaskChangesAction,
   updateTaskAction,
   updateTaskStatusAction,
 } from "@/app/(app)/projects/actions";
@@ -86,6 +87,9 @@ export function TaskDialog({
   const router = useRouter();
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
+  const [reqOpen, setReqOpen] = useState(false);
+  const [reqNote, setReqNote] = useState("");
+  const [reqSending, setReqSending] = useState(false);
   const [editing, setEditing] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [eTitle, setETitle] = useState(task.title);
@@ -123,6 +127,22 @@ export function TaskDialog({
     });
     if (res.error) return toast.error(res.error);
     toast.success(`Moved to "${TASK_STATUS[status].label}"`);
+    router.refresh();
+  }
+
+  async function submitChangeRequest() {
+    if (!reqNote.trim()) return toast.error("Describe the changes needed");
+    setReqSending(true);
+    const res = await requestTaskChangesAction({
+      task_id: task.id,
+      project_id: projectId,
+      note: reqNote.trim(),
+    });
+    setReqSending(false);
+    if (res.error) return toast.error(res.error);
+    toast.success("Changes requested");
+    setReqOpen(false);
+    setReqNote("");
     router.refresh();
   }
 
@@ -346,47 +366,106 @@ export function TaskDialog({
               </div>
             );
           }
-          if (task.status === "in_progress" && canWork) {
+          if (task.status === "in_progress") {
             return (
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <p className="mb-2 text-sm text-muted-foreground">
-                  Done with this? Upload your files below, then mark it
-                  uploaded for review.
-                </p>
-                <Button size="sm" onClick={() => changeStatus("uploaded")}>
-                  <Send className="size-4" />
-                  Mark uploaded
-                </Button>
+              <div className="space-y-3">
+                {task.change_request && (
+                  <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
+                    <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-300">
+                      <RotateCcw className="size-4" />
+                      Changes requested
+                    </p>
+                    <p className="whitespace-pre-wrap text-sm text-amber-900/90 dark:text-amber-200/90">
+                      {task.change_request}
+                    </p>
+                  </div>
+                )}
+                {canWork && (
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="mb-2 text-sm text-muted-foreground">
+                      Done with this? Upload your files below, then submit it
+                      for review.
+                    </p>
+                    <Button size="sm" onClick={() => changeStatus("in_review")}>
+                      <Send className="size-4" />
+                      Submit for review
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           }
-          if (task.status === "uploaded" || task.status === "in_review") {
-            if (canWork) {
+          if (task.status === "in_review") {
+            if (canManage) {
               return (
                 <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
                   <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-300">
-                    Uploaded and ready for your review.
+                    Submitted and ready for your review.
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => changeStatus("done")}>
-                      <Check className="size-4" />
-                      Approve - mark completed
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => changeStatus("in_progress")}
-                    >
-                      <RotateCcw className="size-4" />
-                      Request changes
-                    </Button>
-                  </div>
+                  {reqOpen ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        autoFocus
+                        rows={3}
+                        placeholder="What needs to change? Be specific so the assignee knows what to fix."
+                        value={reqNote}
+                        onChange={(e) => setReqNote(e.target.value)}
+                        className="bg-background"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          onClick={submitChangeRequest}
+                          disabled={reqSending}
+                        >
+                          {reqSending ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <RotateCcw className="size-4" />
+                          )}
+                          Send back with changes
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setReqOpen(false);
+                            setReqNote("");
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => changeStatus("done")}>
+                        <Check className="size-4" />
+                        Approve - mark completed
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setReqOpen(true)}
+                      >
+                        <RotateCcw className="size-4" />
+                        Request changes
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             }
             return (
-              <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
-                Uploaded. Only the assignee or a developer can update this task.
+              <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-sm dark:bg-amber-950/20">
+                <p className="font-medium text-amber-800 dark:text-amber-300">
+                  Submitted for review.
+                </p>
+                <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
+                  {canWork
+                    ? "Waiting for a manager to approve. You can't approve your own work."
+                    : "Waiting for a manager to approve."}
+                </p>
               </div>
             );
           }
@@ -434,7 +513,12 @@ export function TaskDialog({
             <button
               type="button"
               onClick={() => {
-                if (!canWork) return;
+                if (!canWork) {
+                  toast.error(
+                    "Only the assignee or a developer can upload to this task.",
+                  );
+                  return;
+                }
                 (
                   document.getElementById(
                     `fu-${task.id}`,

@@ -212,7 +212,11 @@ export default async function ClientDetailPage({
 
           {showCreds && (
             <div style={{ marginTop: 22 }}>
-              <CredentialsVault clientId={id} credentials={credentials} />
+              <CredentialsVault
+                clientId={id}
+                credentials={credentials}
+                canManage={can.manageCredentials(profile.role)}
+              />
             </div>
           )}
         </div>

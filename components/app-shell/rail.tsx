@@ -55,37 +55,56 @@ export function Rail({
 
   return (
     <nav className="rail">
-      <Link href="/dashboard" className="logo">
-        A
-      </Link>
+      <div className="side-head">
+        <Link href="/dashboard" className="logo">
+          A
+        </Link>
+        <div className="side-ws">
+          <span className="nm">AgencyOS</span>
+          <Icon d="selector" />
+        </div>
+      </div>
 
-      {nav.map((item) => {
-        const r = RAIL[item.href];
-        if (!r) return null;
-        const active =
-          pathname === item.href || pathname.startsWith(item.href + "/");
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={"navlink" + (active ? " active" : "")}
-          >
-            <Icon d={r.icon} />
-            <span>{r.label}</span>
-          </Link>
-        );
-      })}
+      <div className="side-nav">
+        {nav.map((item) => {
+          const r = RAIL[item.href];
+          if (!r) return null;
+          const active =
+            pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={"navlink" + (active ? " active" : "")}
+            >
+              <Icon d={r.icon} />
+              <span>{r.label}</span>
+            </Link>
+          );
+        })}
+      </div>
 
       <div className="grow" />
 
-      <div style={{ position: "relative" }}>
+      <div className="side-foot" style={{ position: "relative" }}>
         <button
-          className="meav"
-          style={{ background: profile.avatar_color }}
+          className="side-user"
           title={`${profile.full_name} · ${ROLE_LABELS[profile.role]}`}
           onClick={() => setMenu((m) => !m)}
         >
-          {initials(profile.full_name)}
+          <span
+            className="meav"
+            style={{ background: profile.avatar_color }}
+          >
+            {initials(profile.full_name)}
+          </span>
+          <span className="min0">
+            <span className="nm" style={{ display: "block" }}>
+              {profile.full_name}
+            </span>
+            <span className="rl">{ROLE_LABELS[profile.role]}</span>
+          </span>
+          <Icon d="selector" />
         </button>
 
         {menu && (
@@ -97,10 +116,10 @@ export function Rail({
             <div
               style={{
                 position: "absolute",
-                bottom: 0,
-                left: "calc(100% + 10px)",
+                bottom: "calc(100% + 8px)",
+                left: 0,
+                right: 0,
                 zIndex: 50,
-                width: 220,
                 background: "var(--surface)",
                 border: "1px solid var(--line)",
                 borderRadius: 12,

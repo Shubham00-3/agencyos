@@ -87,39 +87,64 @@ export function DashboardView({
   return (
     <>
       <div className="kpis">
-        <div className="kpi">
-          <div className="v tnum">{kpis.activeClients}</div>
-          <div className="l">
-            <span className="dot" style={{ background: "var(--brand)" }} />
-            Active clients
+        {(
+          [
+            {
+              v: kpis.activeClients,
+              l: "Active clients",
+              sub: `${projects.length} projects`,
+              icon: "clients",
+              color: "var(--brand)",
+              soft: "var(--brand-soft)",
+            },
+            {
+              v: kpis.inProgress,
+              l: "In progress",
+              sub: `${kpis.inProgress} projects`,
+              icon: "activity",
+              color: "var(--brand)",
+              soft: "var(--brand-soft)",
+            },
+            {
+              v: kpis.inReview,
+              l: "Awaiting review",
+              sub: `${kpis.inReview} projects`,
+              icon: "hourglass",
+              color: "var(--amber)",
+              soft: "var(--amber-soft)",
+            },
+            {
+              v: kpis.overdue,
+              l: "Overdue tasks",
+              sub: `${kpis.overdue} tasks`,
+              icon: "clock",
+              color: "var(--red)",
+              soft: "var(--red-soft)",
+            },
+          ] as const
+        ).map((k) => (
+          <div className="kpi" key={k.l}>
+            <div
+              className="kpi-ic"
+              style={{ background: k.soft, color: k.color }}
+            >
+              <Icon d={k.icon} />
+            </div>
+            <div className="kpi-main">
+              <div
+                className="v tnum"
+                style={k.l === "Overdue tasks" && k.v ? { color: "var(--red)" } : undefined}
+              >
+                {k.v}
+              </div>
+              <div className="l">{k.l}</div>
+              <div className="kpi-sub">
+                <span className="dot" style={{ background: k.color }} />
+                {k.sub}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="kpi">
-          <div className="v tnum">{kpis.inProgress}</div>
-          <div className="l">
-            <span className="dot" style={{ background: "var(--brand)" }} />
-            In progress
-          </div>
-        </div>
-        <div className="kpi">
-          <div className="v tnum">{kpis.inReview}</div>
-          <div className="l">
-            <span className="dot" style={{ background: "var(--amber)" }} />
-            Awaiting review
-          </div>
-        </div>
-        <div className="kpi">
-          <div
-            className="v tnum"
-            style={{ color: kpis.overdue ? "var(--red)" : "var(--ink)" }}
-          >
-            {kpis.overdue}
-          </div>
-          <div className="l">
-            <span className="dot" style={{ background: "var(--red)" }} />
-            Overdue tasks
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="filterbar">

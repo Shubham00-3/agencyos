@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ProjectMeta } from "@/lib/projects";
 import type { ProjectStatus } from "@/lib/types";
 import { Icon } from "@/components/icon";
-import { ClientLogo, AvatarStack } from "@/components/design";
+import { ClientLogo, AvatarStack, Progress, Due } from "@/components/design";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/page-header";
 import { useSearch, matches } from "@/components/search/search-context";
@@ -48,55 +48,24 @@ export function ProjectsView({ projects }: { projects: ProjectMeta[] }) {
       {shown.length === 0 ? (
         <EmptyState title="No projects here" description="Try a different filter." />
       ) : (
-        <div className="table">
-          <div className="tr th">
-            <div className="td-main">Project</div>
-            <div className="td-prog">Progress</div>
-            <div className="td-team">Team</div>
-            <div className="td-status">Status</div>
-            <div className="td-due">Due</div>
-            <div className="td-arrow" />
-          </div>
+        <div className="cardgrid">
           {shown.map((p) => (
-            <Link className="tr" key={p.id} href={`/projects/${p.id}`}>
-              <div className="td-main">
-                <ClientLogo
-                  name={p.client?.business_name ?? "?"}
-                  size={32}
-                  radius={9}
-                />
-                <div className="min0">
-                  <div className="fw6 ell">{p.name}</div>
-                  <div className="muted-sm ell">
-                    {p.client?.business_name}
-                  </div>
+            <Link className="card" key={p.id} href={`/projects/${p.id}`}>
+              <div className="card-top">
+                <div className="client">
+                  <ClientLogo name={p.client?.business_name ?? "?"} />
+                  <span className="cname">{p.client?.business_name}</span>
                 </div>
-              </div>
-              <div className="td-prog">
-                <div className="bar slim">
-                  <i
-                    style={{
-                      width: p.progress + "%",
-                      background:
-                        p.status === "live" ? "var(--green)" : "var(--brand)",
-                    }}
-                  />
-                </div>
-                <span className="tnum muted-sm">{p.progress}%</span>
-              </div>
-              <div className="td-team">
-                <AvatarStack people={p.team} size={24} />
-              </div>
-              <div className="td-status">
                 <ProjectStatusBadge status={p.status} />
               </div>
-              <div className="td-due">
-                <span className={p.dueOver ? "due over" : "muted-sm"}>
-                  {p.due}
-                </span>
+              <div>
+                <div className="ptitle">{p.name}</div>
+                {p.description && <div className="pdesc">{p.description}</div>}
               </div>
-              <div className="td-arrow muted">
-                <Icon d="chevron" size={16} />
+              <Progress value={p.progress} live={p.status === "live"} />
+              <div className="card-foot">
+                <AvatarStack people={p.team} />
+                <Due value={p.due} over={p.dueOver} />
               </div>
             </Link>
           ))}

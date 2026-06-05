@@ -3,13 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import type {
   AttachmentWithUrl,
   CommentWithAuthor,
   TaskWithAssignee,
 } from "@/app/(app)/projects/[id]/page";
-import type { Profile, ProjectBrief, ProjectStatus, UserRole } from "@/lib/types";
+import type {
+  Profile,
+  ProjectBrief,
+  ProjectStatus,
+  TaskStatus,
+  UserRole,
+} from "@/lib/types";
 import {
   PROJECT_STATUS,
   TASK_STATUS,
@@ -68,6 +75,10 @@ export function ProjectDetailView({
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
   const [mine, setMine] = useState(false);
+  // Sections start collapsed; clicking a header expands it (animated).
+  const [openSec, setOpenSec] = useState<Record<string, boolean>>({});
+  const toggle = (st: TaskStatus) =>
+    setOpenSec((o) => ({ ...o, [st]: !o[st] }));
 
   async function setStatus(status: ProjectStatus) {
     const res = await setProjectStatusAction({ project_id: project.id, status });
@@ -154,54 +165,82 @@ export function ProjectDetailView({
         </div>
       </div>
 
-      <div className="detail-meta">
-        <div className="meta-item">
-          <span className="meta-l">Progress</span>
-          <div className="meta-v" style={{ width: 140 }}>
-            <div className="bar slim" style={{ flex: 1 }}>
-              <i
-                style={{
-                  width: meta.progress + "%",
-                  background:
-                    project.status === "live" ? "var(--green)" : "var(--brand)",
-                }}
-              />
+      <div className="statgrid">
+        <div className="statcard">
+          <span className="si">
+            <Icon d="activity" />
+          </span>
+          <div className="sbody">
+            <div className="sl">Progress</div>
+            <div className="sv">
+              <div className="bar slim" style={{ flex: 1, marginTop: 0 }}>
+                <i
+                  style={{
+                    width: meta.progress + "%",
+                    background:
+                      project.status === "live"
+                        ? "var(--green)"
+                        : "var(--brand)",
+                  }}
+                />
+              </div>
+              <span className="tnum">{meta.progress}%</span>
             </div>
-            <span className="tnum">{meta.progress}%</span>
           </div>
         </div>
-        <div className="meta-item">
-          <span className="meta-l">Team</span>
-          <AvatarStack people={meta.team} size={26} />
+        <div className="statcard">
+          <span className="si">
+            <Icon d="team" />
+          </span>
+          <div className="sbody">
+            <div className="sl">Team</div>
+            <div className="sv">
+              <AvatarStack people={meta.team} size={26} />
+            </div>
+          </div>
         </div>
-        <div className="meta-item">
-          <span className="meta-l">Next due</span>
+        <div className="statcard">
           <span
-            className={meta.dueOver ? "due over" : "fw6"}
-            style={{ fontSize: 13.5 }}
+            className="si"
+            style={
+              meta.dueOver
+                ? { background: "var(--red-soft)", color: "var(--red)" }
+                : undefined
+            }
           >
-            {meta.due}
+            <Icon d="hourglass" />
           </span>
+          <div className="sbody">
+            <div className="sl">Next due</div>
+            <div className={"sv" + (meta.dueOver ? " over" : "")}>
+              {meta.due}
+            </div>
+          </div>
         </div>
-        <div className="meta-item">
-          <span className="meta-l">Tasks</span>
-          <span className="fw6" style={{ fontSize: 13.5 }}>
-            {meta.taskTotal} total · {meta.taskOpen} open
+        <div className="statcard">
+          <span className="si">
+            <Icon d="tasks" />
           </span>
+          <div className="sbody">
+            <div className="sl">Tasks</div>
+            <div className="sv">
+              {meta.taskTotal} total · {meta.taskOpen} open
+            </div>
+          </div>
         </div>
       </div>
 
       {(() => {
         const b = project.brief;
-        const items: [string, string | undefined][] = b
-          ? [
-              ["Desired pages", b.desired_pages],
-              ["SEO keywords", b.seo_keywords],
-              ["Colour preferences", b.color_preferences],
-              ["Competitors", b.competitors],
-              ["Reference sites", b.reference_sites],
-              ["Extra notes", b.extra_notes],
-            ].filter(([, v]) => v) as [string, string][]
+        const items: [string, string, string | undefined][] = b
+          ? ([
+              ["doc", "Desired pages", b.desired_pages],
+              ["search", "SEO keywords", b.seo_keywords],
+              ["droplet", "Colour preferences", b.color_preferences],
+              ["user", "Competitors", b.competitors],
+              ["link", "Reference sites", b.reference_sites],
+              ["note", "Extra notes", b.extra_notes],
+            ].filter(([, , v]) => v) as [string, string, string][])
           : [];
         if (items.length === 0) return null;
         return (
@@ -209,19 +248,19 @@ export function ProjectDetailView({
             <div className="sec-head" style={{ marginTop: 0, marginBottom: 14 }}>
               <h2>Brief</h2>
             </div>
-            <div className="panel-card pad" style={{ padding: 18, marginBottom: 24 }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "16px 30px",
-                }}
-              >
-                {items.map(([label, value]) => (
-                  <div key={label}>
-                    <div className="meta-l">{label}</div>
-                    <div style={{ fontSize: 13, marginTop: 5, lineHeight: 1.45 }}>
-                      {value}
+            <div
+              className="panel-card pad"
+              style={{ padding: 20, marginBottom: 24 }}
+            >
+              <div className="brief-grid">
+                {items.map(([icon, label, value]) => (
+                  <div className="brief-item" key={label}>
+                    <span className="brief-ic">
+                      <Icon d={icon} />
+                    </span>
+                    <div className="min0">
+                      <div className="brief-l">{label}</div>
+                      <div className="brief-v">{value}</div>
                     </div>
                   </div>
                 ))}
@@ -251,7 +290,7 @@ export function ProjectDetailView({
         </div>
       </div>
 
-      <div className="board board-inset">
+      <div className="taskacc">
         {TASK_STATUS_ORDER.map((st) => {
           const group = tasks.filter(
             (t) =>
@@ -259,37 +298,56 @@ export function ProjectDetailView({
               (!mine || t.assignee?.id === currentUserId),
           );
           const s = TASK_STATUS[st];
+          const isOpen = !!openSec[st];
           return (
-            <div className="bcol" key={st}>
-              <div className="bcol-head">
+            <div className={"accsec" + (isOpen ? " open" : "")} key={st}>
+              <button
+                type="button"
+                className="acchead"
+                onClick={() => toggle(st)}
+                aria-expanded={isOpen}
+              >
                 <span className="dot" style={{ background: s.dot }} />
                 <span className="fw6">{s.label}</span>
                 <span className="muted-sm tnum">{group.length}</span>
-              </div>
-              <div className="bcol-body">
-                {group.map((t) => (
-                  <KanbanCard
-                    key={t.id}
-                    task={t}
-                    projectId={project.id}
-                    attachments={attachmentsByTask[t.id] ?? []}
-                    comments={commentsByTask[t.id] ?? []}
-                    assignees={team}
-                    currentUserId={currentUserId}
-                    currentUserRole={currentUserRole}
-                    canManage={canManage}
-                    canWork={
-                      currentUserRole === "developer" ||
-                      t.assignee?.id === currentUserId
-                    }
-                  />
-                ))}
-                {canManage && (
-                  <button className="kadd" onClick={() => setAddOpen(true)}>
-                    <Icon d="plus" size={14} />
-                    Add task
-                  </button>
-                )}
+                <ChevronDown className="accchev" />
+              </button>
+              <div className="accpanel">
+                <div className="accpanel-inner">
+                  {group.length === 0 && !canManage ? (
+                    <p className="accempty">No tasks here.</p>
+                  ) : (
+                    <div className="acccards">
+                      {group.map((t) => (
+                        <KanbanCard
+                          key={t.id}
+                          task={t}
+                          projectId={project.id}
+                          attachments={attachmentsByTask[t.id] ?? []}
+                          comments={commentsByTask[t.id] ?? []}
+                          assignees={team}
+                          currentUserId={currentUserId}
+                          currentUserRole={currentUserRole}
+                          canManage={canManage}
+                          canWork={
+                            canManage ||
+                            currentUserRole === "developer" ||
+                            t.assignee?.id === currentUserId
+                          }
+                        />
+                      ))}
+                      {canManage && (
+                        <button
+                          className="kadd"
+                          onClick={() => setAddOpen(true)}
+                        >
+                          <Icon d="plus" size={14} />
+                          Add task
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
