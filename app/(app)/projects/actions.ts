@@ -139,11 +139,47 @@ export async function updateTaskStatusAction(input: {
   status: TaskStatus;
 }) {
   const { supabase } = await authed();
+  // A change request only applies while the task is being reworked. Moving the
+  // task to any other state (e.g. resubmitting for review) clears it.
+  const patch: { status: TaskStatus; change_request?: null } = {
+    status: input.status,
+  };
+  if (input.status !== "in_progress") patch.change_request = null;
   const { error } = await supabase
     .from("tasks")
-    .update({ status: input.status })
+    .update(patch)
     .eq("id", input.task_id);
   if (error) return { error: error.message };
+  revalidatePath(`/projects/${input.project_id}`);
+  revalidatePath("/tasks");
+  return {};
+}
+
+// Reviewer sends a task back to "in progress" with a note describing the
+// changes needed. The note is stored on the task (shown as a banner to the
+// worker) and also logged in the discussion for history.
+export async function requestTaskChangesAction(input: {
+  task_id: string;
+  project_id: string;
+  note: string;
+}) {
+  const { supabase, user } = await authed();
+  if (!user) return { error: "Not authenticated" };
+  const note = input.note.trim();
+  if (!note) return { error: "Describe the changes needed" };
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ status: "in_progress", change_request: note })
+    .eq("id", input.task_id);
+  if (error) return { error: error.message };
+
+  await supabase.from("task_comments").insert({
+    task_id: input.task_id,
+    user_id: user.id,
+    body: `Requested changes: ${note}`,
+  });
+
   revalidatePath(`/projects/${input.project_id}`);
   revalidatePath("/tasks");
   return {};
@@ -166,34 +202,53 @@ export async function addCommentAction(input: {
   return {};
 }
 
-export async function uploadAttachmentAction(formData: FormData) {
+// Mint a short-lived signed URL so the browser can upload the file bytes
+// directly to Supabase Storage. This avoids routing large files through the
+// Server Action body (capped at 1MB by Next.js).
+export async function createUploadUrlAction(input: {
+  task_id: string;
+  project_id: string;
+  file_name: string;
+}): Promise<{ error: string } | { path: string; token: string }> {
+  const { supabase, user } = await authed();
+  if (!user) return { error: "Not authenticated" };
+  if (!input.task_id) return { error: "Missing task" };
+
+  const safeName = input.file_name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${input.project_id}/${input.task_id}/${Date.now()}-${safeName}`;
+
+  const { data, error } = await supabase.storage
+    .from("attachments")
+    .createSignedUploadUrl(path);
+  if (error) return { error: error.message };
+
+  return { path: data.path, token: data.token };
+}
+
+// Record the attachment row after the browser has uploaded the bytes directly
+// to storage via the signed URL.
+export async function recordAttachmentAction(input: {
+  task_id: string;
+  project_id: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string | null;
+}) {
   const { supabase, user } = await authed();
   if (!user) return { error: "Not authenticated" };
 
-  const file = formData.get("file") as File | null;
-  const taskId = formData.get("task_id") as string;
-  const projectId = formData.get("project_id") as string;
-  if (!file || !taskId) return { error: "Missing file" };
-
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `${projectId}/${taskId}/${Date.now()}-${safeName}`;
-
-  const { error: upErr } = await supabase.storage
-    .from("attachments")
-    .upload(path, file, { contentType: file.type || undefined });
-  if (upErr) return { error: upErr.message };
-
   const { error } = await supabase.from("task_attachments").insert({
-    task_id: taskId,
-    file_name: file.name,
-    storage_path: path,
-    file_size: file.size,
-    mime_type: file.type || null,
+    task_id: input.task_id,
+    file_name: input.file_name,
+    storage_path: input.storage_path,
+    file_size: input.file_size,
+    mime_type: input.mime_type,
     uploaded_by: user.id,
   });
   if (error) return { error: error.message };
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${input.project_id}`);
   return {};
 }
 

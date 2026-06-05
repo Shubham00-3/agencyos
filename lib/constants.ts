@@ -49,6 +49,14 @@ export function isStaff(role: UserRole | undefined | null): boolean {
   return !!role && STAFF_ROLES.includes(role);
 }
 
+// Managers can make changes (create / edit / delete / assign / approve). The
+// CEO is intentionally NOT a manager: full read access, but read-only — they
+// can see everything and change nothing.
+export const MANAGER_ROLES: UserRole[] = ["pa", "admin"];
+export function isManager(role: UserRole | undefined | null): boolean {
+  return !!role && MANAGER_ROLES.includes(role);
+}
+
 // ---- Status styling ------------------------------------------------------
 // Each maps to a CSS badge class (.b-prog/.b-rev/.b-live/.b-todo) + a dot colour
 // from the design system (see globals.css).
@@ -78,7 +86,6 @@ export const TASK_STATUS: Record<TaskStatus, StatusStyle> = {
 export const TASK_STATUS_ORDER: TaskStatus[] = [
   "todo",
   "in_progress",
-  "uploaded",
   "in_review",
   "done",
 ];

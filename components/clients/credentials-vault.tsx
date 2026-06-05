@@ -78,9 +78,11 @@ function SecretRow({ label, value }: { label: string; value: string | null }) {
 export function CredentialsVault({
   clientId,
   credentials,
+  canManage = false,
 }: {
   clientId: string;
   credentials: ClientCredential[];
+  canManage?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -122,10 +124,12 @@ export function CredentialsVault({
           Credentials
         </CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button size="sm" variant="outline" />}>
-            <Plus className="size-4" />
-            Add
-          </DialogTrigger>
+          {canManage && (
+            <DialogTrigger render={<Button size="sm" variant="outline" />}>
+              <Plus className="size-4" />
+              Add
+            </DialogTrigger>
+          )}
           <DialogContent>
             <form onSubmit={onAdd}>
               <DialogHeader>
@@ -200,14 +204,16 @@ export function CredentialsVault({
                     {KIND_LABEL[c.kind]}
                   </p>
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => onDelete(c.id)}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
+                {canManage && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-7 text-muted-foreground hover:text-destructive"
+                    onClick={() => onDelete(c.id)}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                )}
               </div>
               <div className="space-y-1">
                 {c.url && (

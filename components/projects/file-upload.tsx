@@ -4,7 +4,11 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadAttachmentAction } from "@/app/(app)/projects/actions";
+import {
+  createUploadUrlAction,
+  recordAttachmentAction,
+} from "@/app/(app)/projects/actions";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export function FileUpload({
@@ -23,12 +27,36 @@ export function FileUpload({
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    const supabase = createClient();
     for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.set("file", file);
-      fd.set("task_id", taskId);
-      fd.set("project_id", projectId);
-      const res = await uploadAttachmentAction(fd);
+      const signed = await createUploadUrlAction({
+        task_id: taskId,
+        project_id: projectId,
+        file_name: file.name,
+      });
+      if ("error" in signed) {
+        toast.error(`${file.name}: ${signed.error}`);
+        continue;
+      }
+
+      const { error: upErr } = await supabase.storage
+        .from("attachments")
+        .uploadToSignedUrl(signed.path, signed.token, file, {
+          contentType: file.type || undefined,
+        });
+      if (upErr) {
+        toast.error(`${file.name}: ${upErr.message}`);
+        continue;
+      }
+
+      const res = await recordAttachmentAction({
+        task_id: taskId,
+        project_id: projectId,
+        storage_path: signed.path,
+        file_name: file.name,
+        file_size: file.size,
+        mime_type: file.type || null,
+      });
       if (res.error) {
         toast.error(`${file.name}: ${res.error}`);
       } else {

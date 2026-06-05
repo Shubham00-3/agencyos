@@ -1,25 +1,28 @@
 import type { UserRole } from "./types";
-import { isStaff } from "./constants";
+import { isStaff, isManager } from "./constants";
 
 // UI-level permission helpers. These mirror the database RLS policies so the
 // interface only shows what a role can actually do — the DB is the real guard.
+//
+// Read vs write: the CEO is read-only. `isStaff` (ceo/pa/admin) grants full
+// VISIBILITY; `isManager` (pa/admin) grants the ability to CHANGE things.
 
 export const can = {
   // Clients / projects: create, edit, delete.
-  manageClients: (role: UserRole) => isStaff(role),
-  manageProjects: (role: UserRole) => isStaff(role),
+  manageClients: (role: UserRole) => isManager(role),
+  manageProjects: (role: UserRole) => isManager(role),
   // Create + assign tasks to anyone.
-  manageTasks: (role: UserRole) => isStaff(role),
-  // View and edit stored WordPress / hosting credentials.
-  // Tightened: PA (who enters them) + System Admin (who goes live) only —
-  // not the CEO. Least-privilege for secrets.
+  manageTasks: (role: UserRole) => isManager(role),
+  // View stored WordPress / hosting credentials (read). CEO/PA/Admin.
   viewCredentials: (role: UserRole) => isStaff(role),
+  // Add / edit / delete stored credentials (write). Not the CEO.
+  manageCredentials: (role: UserRole) => isManager(role),
   // Add / manage team members (auth accounts).
-  manageTeam: (role: UserRole) => isStaff(role),
-  // Flip a project to "live".
-  markLive: (role: UserRole) => role === "ceo" || role === "admin",
+  manageTeam: (role: UserRole) => isManager(role),
+  // Flip a project to "live" — System Admin only.
+  markLive: (role: UserRole) => role === "admin",
   // See the CEO-style portfolio overview on the dashboard.
-  seeOverview: (role: UserRole) => role === "ceo" || isStaff(role),
+  seeOverview: (role: UserRole) => isStaff(role),
   // Full task visibility without task-management controls.
   seeAllTasks: (role: UserRole) => isStaff(role) || role === "developer",
 };

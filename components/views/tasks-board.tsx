@@ -108,6 +108,7 @@ export function TasksBoard({
                           currentUserRole={currentUserRole}
                           canManage={canManage}
                           canWork={
+                            canManage ||
                             currentUserRole === "developer" ||
                             t.assignee?.id === currentUserId
                           }
