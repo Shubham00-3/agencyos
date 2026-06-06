@@ -17,8 +17,6 @@ export default function LoginPage() {
   const demoMode = DEMO_MODE;
   const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "password123";
 
-  const [email, setEmail] = useState(demoMode ? "pa@agencyos.test" : "");
-  const [password, setPassword] = useState(demoMode ? demoPassword : "");
   const [loading, setLoading] = useState(false);
 
   async function login(em: string, pw: string) {
@@ -107,7 +105,12 @@ export default function LoginPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              login(email, password);
+              // Read the live field values (robust to browser autofill, which
+              // can set the input without firing React onChange).
+              const fd = new FormData(e.currentTarget);
+              const em = String(fd.get("email") ?? "").trim();
+              const pw = String(fd.get("password") ?? "");
+              login(em, pw);
             }}
             className="space-y-4"
           >
@@ -115,10 +118,10 @@ export default function LoginPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                defaultValue={demoMode ? "pa@agencyos.test" : ""}
                 required
               />
             </div>
@@ -126,10 +129,10 @@ export default function LoginPage() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                defaultValue={demoMode ? demoPassword : ""}
                 required
               />
             </div>
