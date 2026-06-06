@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ALL_ROLES, ROLE_LABELS } from "@/lib/constants";
+import { DEMO_MODE } from "@/lib/demo";
 import type { UserRole } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const demoMode = DEMO_MODE;
   const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "password123";
 
   const [email, setEmail] = useState(demoMode ? "pa@agencyos.test" : "");
