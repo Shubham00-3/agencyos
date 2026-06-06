@@ -99,6 +99,7 @@ export function TaskDialog({
     task.assignee?.id ?? UNASSIGNED,
   );
   const [eDue, setEDue] = useState<string>(task.due_date ?? "");
+  const hasStartEvidence = attachments.length > 0 || comments.length > 0;
 
   async function saveEdit() {
     if (!eTitle.trim()) return toast.error("Title required");
@@ -356,10 +357,14 @@ export function TaskDialog({
             return (
               <div className="rounded-lg border bg-muted/30 p-3">
                 <p className="mb-2 text-sm text-muted-foreground">
-                  Ready to start? Upload files below as you go - photos, PDFs,
-                  Word docs, ZIPs, and other deliverables are supported.
+                  Add a comment or upload a file before moving this task to in
+                  progress.
                 </p>
-                <Button size="sm" onClick={() => changeStatus("in_progress")}>
+                <Button
+                  size="sm"
+                  onClick={() => changeStatus("in_progress")}
+                  disabled={!hasStartEvidence}
+                >
                   <Play className="size-4" />
                   Start working
                 </Button>

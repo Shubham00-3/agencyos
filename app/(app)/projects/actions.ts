@@ -139,6 +139,36 @@ export async function updateTaskStatusAction(input: {
   status: TaskStatus;
 }) {
   const { supabase } = await authed();
+  if (input.status === "in_progress") {
+    const { data: task, error: taskError } = await supabase
+      .from("tasks")
+      .select("status")
+      .eq("id", input.task_id)
+      .single();
+    if (taskError) return { error: taskError.message };
+
+    if (task?.status === "todo") {
+      const [attachmentsRes, commentsRes] = await Promise.all([
+        supabase
+          .from("task_attachments")
+          .select("id", { count: "exact", head: true })
+          .eq("task_id", input.task_id),
+        supabase
+          .from("task_comments")
+          .select("id", { count: "exact", head: true })
+          .eq("task_id", input.task_id),
+      ]);
+      if (attachmentsRes.error) return { error: attachmentsRes.error.message };
+      if (commentsRes.error) return { error: commentsRes.error.message };
+      if (!attachmentsRes.count && !commentsRes.count) {
+        return {
+          error:
+            "Add a comment or upload a file before moving this task to in progress.",
+        };
+      }
+    }
+  }
+
   // A change request only applies while the task is being reworked. Moving the
   // task to any other state (e.g. resubmitting for review) clears it.
   const patch: { status: TaskStatus; change_request?: null } = {
