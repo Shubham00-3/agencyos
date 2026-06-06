@@ -1,5 +1,6 @@
 import { requireProfile } from "@/lib/auth";
 import { navForRole } from "@/lib/permissions";
+import { DEMO_MODE } from "@/lib/demo";
 import { Rail } from "@/components/app-shell/rail";
 import { SearchProvider } from "@/components/search/search-context";
 
@@ -10,7 +11,7 @@ export default async function AppLayout({
 }) {
   const profile = await requireProfile();
   const nav = navForRole(profile.role);
-  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const demoMode = DEMO_MODE;
 
   return (
     <div className="app">

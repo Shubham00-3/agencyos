@@ -50,8 +50,15 @@ export function AddMemberDialog({
       password: (fd.get("password") as string) || undefined,
     });
     setLoading(false);
-    if (res.error) return toast.error(res.error);
-    toast.success("Team member added");
+    if ("error" in res) return toast.error(res.error);
+    if (res.tempPassword) {
+      toast.success("Team member added", {
+        description: `Temporary password: ${res.tempPassword} — share it with them to sign in, then they should change it.`,
+        duration: 30000,
+      });
+    } else {
+      toast.success("Team member added");
+    }
     setOpen(false);
     setRole("designer");
     router.refresh();
@@ -115,7 +122,7 @@ export function AddMemberDialog({
                 <Input
                   id="password"
                   name="password"
-                  placeholder="password123"
+                  placeholder="Auto-generated if blank"
                 />
               </div>
             </div>
