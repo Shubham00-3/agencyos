@@ -223,7 +223,6 @@ export async function updateTaskStatusAction(input: {
       ]);
       if (attachmentsRes.error) return { error: attachmentsRes.error.message };
       if (commentsRes.error) return { error: commentsRes.error.message };
-
       const evidenceCount =
         (attachmentsRes.count ?? 0) + (commentsRes.count ?? 0);
       if (evidenceCount === 0) {

@@ -428,3 +428,93 @@ drop trigger if exists trg_task_worker_status on tasks;
 create trigger trg_task_worker_status
   before update on tasks
   for each row execute function enforce_task_worker_status();
+
+-- -------------------------------------------------------------------
+-- 0011_readonly_ceo.sql
+-- -------------------------------------------------------------------
+-- Read-only CEO: the CEO can SEE everything (kept in is_staff(), which gates
+-- all SELECT policies) but can CHANGE nothing. "Write" authority moves from
+-- staff (ceo/pa/admin) to managers (pa/admin) only.
+
+create or replace function can_manage_work()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(auth_role() in ('pa','admin'), false);
+$$;
+
+create or replace function can_work_on_task(tid uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(
+    auth_role() in ('pa','admin')
+    or auth_role() = 'developer'
+    or exists (
+      select 1 from tasks t
+      where t.id = tid and t.assignee_id = auth.uid()
+    ),
+    false
+  );
+$$;
+
+create or replace function enforce_task_worker_status()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.status is distinct from old.status then
+    if not can_work_on_task(old.id) then
+      raise exception 'Only the assignee or a developer can update task status.';
+    end if;
+    if (new.status = 'done' or old.status = 'in_review')
+       and not (auth_role() in ('pa','admin')) then
+      raise exception 'Only staff can approve or return a task that is in review.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop policy if exists creds_all on client_credentials;
+drop policy if exists creds_select on client_credentials;
+drop policy if exists creds_write on client_credentials;
+create policy creds_select on client_credentials for select to authenticated
+  using (can_view_credentials());
+create policy creds_write on client_credentials for all to authenticated
+  using (can_manage_work())
+  with check (can_manage_work());
+
+-- -------------------------------------------------------------------
+-- 0012_require_task_evidence_to_start.sql
+-- -------------------------------------------------------------------
+-- A task cannot move from Pending (todo) to In progress until the worker has
+-- added at least one upload or one comment.
+
+create or replace function enforce_task_worker_status()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.status is distinct from old.status then
+    if not can_work_on_task(old.id) then
+      raise exception 'Only the assignee or a developer can update task status.';
+    end if;
+
+    if old.status = 'todo' and new.status = 'in_progress'
+       and not exists (
+         select 1 from task_attachments
+         where task_id = old.id
+       )
+       and not exists (
+         select 1 from task_comments
+         where task_id = old.id
+       ) then
+      raise exception 'Add a comment or upload a file before moving this task to in progress.';
+    end if;
+
+    if (new.status = 'done' or old.status = 'in_review')
+       and not (auth_role() in ('pa','admin')) then
+      raise exception 'Only staff can approve or return a task that is in review.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_task_worker_status on tasks;
+create trigger trg_task_worker_status
+  before update on tasks
+  for each row execute function enforce_task_worker_status();

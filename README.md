@@ -37,11 +37,11 @@ once their deal has closed.
    5. `supabase/migrations/0005_move_uploaded_tasks.sql` — migrates legacy task review states.
    6. `supabase/migrations/0006_task_worker_permissions.sql` — assignee/developer task-work rules.
    7. `supabase/migrations/0007_task_visibility_scope.sql` — restricts contributor task visibility.
-   8. `supabase/migrations/0008_staff_work_and_retire_uploaded.sql`
-   9. `supabase/migrations/0009_task_change_request.sql`
-   10. `supabase/migrations/0010_review_is_staff_only.sql`
-   11. `supabase/migrations/0011_readonly_ceo.sql`
-   12. every `supabase/migrations/0012_*.sql` file, then `0013_*.sql` through `0020_*.sql`
+   8. `supabase/migrations/0008_staff_work_and_retire_uploaded.sql` — lets staff work/review and retires Uploaded.
+   9. `supabase/migrations/0009_task_change_request.sql` — stores requested-change notes.
+   10. `supabase/migrations/0010_review_is_staff_only.sql` — keeps review approval staff-only.
+   11. `supabase/migrations/0011_readonly_ceo.sql` — makes CEO monitor-only.
+   12. every `supabase/migrations/0012_*.sql` file, then `0013_*.sql` through `0020_*.sql` — client/project fields, attachments, website workflow, communications, and task-evidence/workflow guards.
    13. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
 
    > Run each whole file in the SQL editor (not piecemeal) so the dollar-quoted
