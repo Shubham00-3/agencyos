@@ -44,30 +44,31 @@ drop function seed_user(uuid, text, text, text, text);
 -- ---------------------------------------------------------------------------
 -- Clients
 -- ---------------------------------------------------------------------------
-insert into clients (id, business_name, contact_name, phone, email, existing_website_url, status, notes, created_by) values
-  ('c1111111-1111-1111-1111-111111111111', 'Greenleaf Plumbing',  'Mike Torrence',   '+1 416-555-0148', 'mike@greenleafplumbing.ca',  'https://greenleafplumbing.ca',  'active', 'Wants a modern revamp, keep the green branding. Service-area pages are the priority.', '22222222-2222-2222-2222-222222222222'),
-  ('c2222222-2222-2222-2222-222222222222', 'Bright Smiles Dental','Dr. Anika Sharma','+1 647-555-0192', 'hello@brightsmilesdental.ca','https://brightsmilesdental.ca', 'active', 'Brand new site. Needs online booking embed and a friendly, clean look.', '22222222-2222-2222-2222-222222222222'),
-  ('c3333333-3333-3333-3333-333333333333', 'Peak Roofing Co.',    'Dan Kowalski',    '+1 905-555-0177', 'dan@peakroofing.ca',         'https://peakroofing.ca',        'active', 'Full launch from scratch. Strong before/after gallery requested.', '22222222-2222-2222-2222-222222222222');
-
--- Stored credentials (staff-only via RLS)
-insert into client_credentials (client_id, kind, label, url, username, password, notes) values
-  ('c1111111-1111-1111-1111-111111111111', 'wordpress', 'WordPress Admin', 'https://greenleafplumbing.ca/wp-admin', 'gl_admin',   'Gr33nLeaf!2025', 'Elementor Pro active'),
-  ('c1111111-1111-1111-1111-111111111111', 'hosting',   'SiteGround',      'https://siteground.com',                 'greenleaf',  'Hosting#9921',   'GoGeek plan'),
-  ('c2222222-2222-2222-2222-222222222222', 'hosting',   'Cloudways',       'https://platform.cloudways.com',         'brightsmiles','Cl0ud!ways44',  'New server, staging only');
+insert into clients (id, business_name, city, province, country, client_kind, web_archive_links, last_website_notes, contact_name, phone, email, existing_website_url, status, notes, created_by) values
+  ('c1111111-1111-1111-1111-111111111111', 'Greenleaf Plumbing',  'Toronto',     'Ontario', 'Canada', 'old', array['https://web.archive.org/web/2016/https://greenleafplumbing.ca'], 'Old WordPress site, very dated theme. Keep the leaf logo, drop everything else.', 'Mike Torrence',   '+1 416-555-0148', 'mike@greenleafplumbing.ca',  'https://greenleafplumbing.ca',  'active', 'Wants a modern revamp, keep the green branding. Service-area pages are the priority.', '22222222-2222-2222-2222-222222222222'),
+  ('c2222222-2222-2222-2222-222222222222', 'Bright Smiles Dental','Toronto',     'Ontario', 'Canada', 'new', '{}', null, 'Dr. Anika Sharma','+1 647-555-0192', 'hello@brightsmilesdental.ca','https://brightsmilesdental.ca', 'active', 'Brand new site. Needs online booking embed and a friendly, clean look.', '22222222-2222-2222-2222-222222222222'),
+  ('c3333333-3333-3333-3333-333333333333', 'Peak Roofing Co.',    'Mississauga', 'Ontario', 'Canada', 'new', '{}', null, 'Dan Kowalski',    '+1 905-555-0177', 'dan@peakroofing.ca',         'https://peakroofing.ca',        'active', 'Full launch from scratch. Strong before/after gallery requested.', '22222222-2222-2222-2222-222222222222');
 
 -- ---------------------------------------------------------------------------
 -- Projects
 -- ---------------------------------------------------------------------------
-insert into projects (id, client_id, name, description, status, brief, created_by) values
-  ('a1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', 'Greenleaf — Website Revamp', 'Rebuild the existing WordPress site with a modern look and service-area landing pages.', 'in_progress',
+insert into projects (id, client_id, name, project_type, project_kind, description, status, brief, created_by) values
+  ('a1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', 'Greenleaf — Website Revamp', 'Redesigning', 'old', 'Rebuild the existing WordPress site with a modern look and service-area landing pages.', 'in_progress',
    '{"competitors":"reliableplumbingto.ca, gta-plumbers.com","seo_keywords":"emergency plumber toronto, drain cleaning, water heater install","color_preferences":"Greens (#1f8a4c), white, charcoal text","desired_pages":"Home, Services, Service Areas, About, Reviews, Contact","reference_sites":"https://www.mrrooter.ca","extra_notes":"Keep the existing logo, refresh everything else."}'::jsonb,
    '22222222-2222-2222-2222-222222222222'),
-  ('a2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222', 'Bright Smiles — New Website', 'Brand new dental practice site with online booking.', 'in_progress',
+  ('a2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222', 'Bright Smiles — New Website', 'New Website', 'new', 'Brand new dental practice site with online booking.', 'in_progress',
    '{"competitors":"yorkvilledental.ca","seo_keywords":"dentist toronto, teeth whitening, invisalign","color_preferences":"Soft blue + white, lots of whitespace","desired_pages":"Home, About, Services, Booking, Contact","reference_sites":"https://www.smilesatyonge.com","extra_notes":"Needs Cliniko booking embed."}'::jsonb,
    '22222222-2222-2222-2222-222222222222'),
-  ('a3333333-3333-3333-3333-333333333333', 'c3333333-3333-3333-3333-333333333333', 'Peak Roofing — Full Launch', 'Full site build from scratch, gallery-heavy.', 'not_started',
+  ('a3333333-3333-3333-3333-333333333333', 'c3333333-3333-3333-3333-333333333333', 'Peak Roofing — Full Launch', 'New Website', 'new', 'Full site build from scratch, gallery-heavy.', 'not_started',
    '{"competitors":"gtaroofing.com","seo_keywords":"roof replacement, roofing contractor, shingle repair","color_preferences":"Dark slate + orange accent","desired_pages":"Home, Services, Gallery, Financing, Contact","reference_sites":"","extra_notes":"Awaiting branding assets from client."}'::jsonb,
    '22222222-2222-2222-2222-222222222222');
+
+-- Stored credentials (staff-only via RLS). Now scoped to the individual project
+-- a login belongs to, not the client as a whole.
+insert into client_credentials (client_id, project_id, kind, label, url, username, password, notes) values
+  ('c1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'wordpress', 'WordPress Admin', 'https://greenleafplumbing.ca/wp-admin', 'gl_admin',   'Gr33nLeaf!2025', 'Elementor Pro active'),
+  ('c1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'hosting',   'SiteGround',      'https://siteground.com',                 'greenleaf',  'Hosting#9921',   'GoGeek plan'),
+  ('c2222222-2222-2222-2222-222222222222', 'a2222222-2222-2222-2222-222222222222', 'hosting',   'Cloudways',       'https://platform.cloudways.com',         'brightsmiles','Cl0ud!ways44',  'New server, staging only');
 
 -- Project members (drives contributor visibility)
 insert into project_members (project_id, user_id) values

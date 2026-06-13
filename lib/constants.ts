@@ -1,5 +1,6 @@
 import type {
   ClientStatus,
+  LifecycleKind,
   ProjectStatus,
   TaskCategory,
   TaskStatus,
@@ -88,6 +89,123 @@ export const TASK_STATUS_ORDER: TaskStatus[] = [
   "in_progress",
   "in_review",
   "done",
+];
+
+// Predefined project types for the new-project dropdown. "Other" reveals a
+// free-text field so the user can specify a type that isn't listed here.
+export const PROJECT_TYPES = [
+  "New Website",
+  "Redesigning",
+  "SEO",
+  "E-commerce",
+  "Facebook Ads",
+  "Google Ads",
+  "Social Media Marketing",
+] as const;
+
+export const PROJECT_TYPE_OTHER = "Other";
+
+// New vs old (returning) flag, shared by clients and projects.
+export const LIFECYCLE_LABEL: Record<LifecycleKind, string> = {
+  new: "New",
+  old: "Old",
+};
+
+export const MAX_WEB_ARCHIVE_LINKS = 5;
+
+// ---- Communications (call recordings + transcription) --------------------
+// Language hint chosen at record time, mapped to Sarvam saaras:v3 params.
+// Client calls should be readable by the full internal team, so every non-
+// English recording uses translate mode and stores the transcript in English.
+export type CommLanguageHint = {
+  value: string;
+  label: string;
+  languageCode: string;
+  mode: "transcribe" | "translate" | "codemix";
+};
+
+export const COMM_LANGUAGES: CommLanguageHint[] = [
+  { value: "auto", label: "Auto-detect", languageCode: "unknown", mode: "translate" },
+  { value: "pa-IN", label: "Punjabi", languageCode: "pa-IN", mode: "translate" },
+  { value: "hi-IN", label: "Hindi", languageCode: "hi-IN", mode: "translate" },
+  { value: "en-IN", label: "English", languageCode: "en-IN", mode: "transcribe" },
+  { value: "code-mixed", label: "Code-mixed", languageCode: "unknown", mode: "translate" },
+];
+
+export const COMM_LANGUAGE_LABEL: Record<string, string> = Object.fromEntries(
+  COMM_LANGUAGES.map((l) => [l.value, l.label]),
+);
+
+export const TRANSCRIPT_STATUS_LABEL: Record<string, string> = {
+  none: "No transcript",
+  processing: "Transcribing…",
+  done: "Transcribed",
+  failed: "Transcription failed",
+};
+
+// Keep the Server Action that starts Sarvam jobs comfortably below common
+// serverless memory/time limits. 50 MB is about 26 minutes of 16 kHz mono WAV.
+export const MAX_TRANSCRIPTION_AUDIO_BYTES = 50 * 1024 * 1024;
+
+// Joins the location parts into "City, Province, Country", skipping blanks.
+export function formatLocation(parts: {
+  city?: string | null;
+  province?: string | null;
+  country?: string | null;
+}): string {
+  return [parts.city, parts.province, parts.country]
+    .map((p) => p?.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+// The fixed website build pipeline. "Generate standard workflow" on a project
+// creates one task per step, in this order, each assignable to a team member.
+export const WEBSITE_WORKFLOW: {
+  stage: string;
+  category: TaskCategory;
+  description: string;
+}[] = [
+  {
+    stage: "Requirement Gathering",
+    category: "general",
+    description: "Gather requirements, access, and scope with the client.",
+  },
+  {
+    stage: "Graphic / Design Development",
+    category: "design",
+    description: "Design the mockups and graphics for the site.",
+  },
+  {
+    stage: "Content Writing",
+    category: "content",
+    description: "Write the page copy and content.",
+  },
+  {
+    stage: "QA",
+    category: "dev",
+    description: "Quality-check the build across pages and devices.",
+  },
+  {
+    stage: "Initial SEO Check",
+    category: "general",
+    description: "Initial SEO pass — meta tags, headings, indexing.",
+  },
+  {
+    stage: "Sent for Review",
+    category: "general",
+    description: "Send to the client / PA for review.",
+  },
+  {
+    stage: "Go Live",
+    category: "dev",
+    description: "Publish the site live.",
+  },
+  {
+    stage: "Post-Live Check",
+    category: "dev",
+    description: "Post-launch checks once the site is live.",
+  },
 ];
 
 export const TASK_CATEGORY: Record<TaskCategory, { label: string }> = {

@@ -77,10 +77,12 @@ function SecretRow({ label, value }: { label: string; value: string | null }) {
 
 export function CredentialsVault({
   clientId,
+  projectId,
   credentials,
   canManage = false,
 }: {
   clientId: string;
+  projectId: string;
   credentials: ClientCredential[];
   canManage?: boolean;
 }) {
@@ -101,6 +103,7 @@ export function CredentialsVault({
       username: get("username"),
       password: get("password"),
       notes: get("notes"),
+      project_id: projectId,
     });
     setLoading(false);
     if (res.error) return toast.error(res.error);
@@ -110,7 +113,7 @@ export function CredentialsVault({
   }
 
   async function onDelete(id: string) {
-    const res = await deleteCredentialAction(id, clientId);
+    const res = await deleteCredentialAction(id, clientId, projectId);
     if (res.error) return toast.error(res.error);
     toast.success("Credential removed");
     router.refresh();

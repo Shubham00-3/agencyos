@@ -49,7 +49,12 @@ export function KanbanCard({
     <>
       <button className="kcard" onClick={() => setOpen(true)}>
         <div className="kcard-top">
-          <CategoryBadge category={task.category} />
+          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+            {task.step_order != null && (
+              <span className="catpill">Step {task.step_order + 1}</span>
+            )}
+            <CategoryBadge category={task.category} />
+          </span>
           {task.assignee && (
             <PersonAvatar
               name={task.assignee.full_name}

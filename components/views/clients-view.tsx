@@ -7,11 +7,16 @@ import { ClientLogo } from "@/components/design";
 import { ClientStatusBadge } from "@/components/status-badge";
 import { AddClientDialog } from "@/components/clients/add-client-dialog";
 import { useSearch, matches } from "@/components/search/search-context";
-import type { ClientStatus } from "@/lib/types";
+import { formatLocation, LIFECYCLE_LABEL } from "@/lib/constants";
+import type { ClientStatus, LifecycleKind } from "@/lib/types";
 
 export type ClientCard = {
   id: string;
   business_name: string;
+  city: string;
+  province: string | null;
+  country: string | null;
+  client_kind: LifecycleKind;
   contact_name: string | null;
   email: string | null;
   status: ClientStatus;
@@ -36,7 +41,17 @@ export function ClientsView({
   const { q } = useSearch();
   const list = clients
     .filter((c) => (tab === "all" ? true : c.status === tab))
-    .filter((c) => matches(q, c.business_name, c.contact_name, c.email));
+    .filter((c) =>
+      matches(
+        q,
+        c.business_name,
+        c.city,
+        c.province,
+        c.country,
+        c.contact_name,
+        c.email,
+      ),
+    );
 
   return (
     <>
@@ -69,10 +84,18 @@ export function ClientsView({
                   <div className="ptitle ell" style={{ fontSize: 15 }}>
                     {c.business_name}
                   </div>
-                  <div className="muted-sm ell">{c.contact_name ?? "—"}</div>
+                  <div className="muted-sm ell">
+                    {formatLocation(c)}
+                    {c.contact_name ? ` · ${c.contact_name}` : ""}
+                  </div>
                 </div>
               </div>
-              <ClientStatusBadge status={c.status} />
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {c.client_kind === "old" && (
+                  <span className="catpill">{LIFECYCLE_LABEL.old}</span>
+                )}
+                <ClientStatusBadge status={c.status} />
+              </div>
             </div>
             {c.email && (
               <div className="kv">

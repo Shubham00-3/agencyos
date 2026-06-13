@@ -4,7 +4,7 @@ Internal project-management & collaboration workspace for a web-development
 agency. Replaces scattered communication with one place where the team
 coordinates every website build:
 
-- **CEO** — full overview and operational access across the workspace.
+- **CEO** — read-only overview across the workspace.
 - **PA** — adds clients, creates & assigns tasks, stores credentials, monitors everyone.
 - **Designer / Copywriter** — see only their assigned work, upload files, update status.
 - **Developer** — can see and work on every task across every project.
@@ -26,6 +26,7 @@ once their deal has closed.
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
    SUPABASE_SERVICE_ROLE_KEY=...
+   SARVAM_API_KEY=...
    NEXT_PUBLIC_DEMO_MODE=true
    ```
 3. In the Supabase dashboard **SQL editor**, run these files **in order**:
@@ -36,7 +37,12 @@ once their deal has closed.
    5. `supabase/migrations/0005_move_uploaded_tasks.sql` — migrates legacy task review states.
    6. `supabase/migrations/0006_task_worker_permissions.sql` — assignee/developer task-work rules.
    7. `supabase/migrations/0007_task_visibility_scope.sql` — restricts contributor task visibility.
-   8. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
+   8. `supabase/migrations/0008_staff_work_and_retire_uploaded.sql`
+   9. `supabase/migrations/0009_task_change_request.sql`
+   10. `supabase/migrations/0010_review_is_staff_only.sql`
+   11. `supabase/migrations/0011_readonly_ceo.sql`
+   12. every `supabase/migrations/0012_*.sql` file, then `0013_*.sql` through `0020_*.sql`
+   13. `supabase/seed.sql` — 6 demo users (one per role) + demo clients/projects/tasks.
 
    > Run each whole file in the SQL editor (not piecemeal) so the dollar-quoted
    > functions parse correctly.
@@ -61,11 +67,12 @@ matching account — so you can demo every view. Set it to `false` for productio
 
 Access is enforced by **Postgres Row-Level Security**, not just hidden in the UI:
 
-- Staff (CEO / PA / Admin) — full read/write on clients, projects, tasks, and credentials.
+- CEO — read-only workspace overview, including stored credentials.
+- Managers (PA / Admin) — full write access on clients, projects, tasks, team, and credentials.
 - Developers — read and work on every task; **no credential access**.
 - Other contributors — read only the projects they're a member of, see and update
   only tasks assigned to them, upload files; **no credential access**.
-- CEO and System Admin can flip a project to **Live**.
+- System Admin is the operational admin role for launch/live controls.
 
 ## Project structure
 

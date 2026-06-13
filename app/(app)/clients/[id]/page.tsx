@@ -1,16 +1,20 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/permissions";
 import { getProjectsMeta } from "@/lib/projects";
-import type { Client, ClientCredential } from "@/lib/types";
+import { formatLocation, LIFECYCLE_LABEL } from "@/lib/constants";
+import type { Client, ClientAttachment } from "@/lib/types";
 import { Icon } from "@/components/icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ClientLogo } from "@/components/design";
 import { ClientStatusBadge, ProjectStatusBadge } from "@/components/status-badge";
-import { CredentialsVault } from "@/components/clients/credentials-vault";
+import { DetailUnavailable } from "@/components/detail-unavailable";
 import { EditClientDialog } from "@/components/clients/edit-client-dialog";
+import {
+  ClientAttachments,
+  type ClientAttachmentItem,
+} from "@/components/clients/client-attachments";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 
 export default async function ClientDetailPage({
@@ -22,27 +26,64 @@ export default async function ClientDetailPage({
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const { data: clientData } = await supabase
+  const { data: clientData, error: clientError } = await supabase
     .from("clients")
     .select("*")
     .eq("id", id)
-    .single();
-  if (!clientData) notFound();
+    .maybeSingle();
+  if (clientError) {
+    return (
+      <DetailUnavailable
+        eyebrow="Client"
+        title="Client could not be loaded"
+        message="The client detail page received an error from Supabase. This is usually a migration, schema-cache, or permission issue rather than a missing page."
+        backHref="/clients"
+        backLabel="Clients"
+        error={clientError.message}
+      />
+    );
+  }
+  if (!clientData) {
+    return (
+      <DetailUnavailable
+        eyebrow="Client"
+        title="Client is not available"
+        message="This client was not found or your current role cannot open its full client record. Go back to the client list or switch to a manager account."
+        backHref="/clients"
+        backLabel="Clients"
+      />
+    );
+  }
   const c = clientData as Client;
+  // Defensive: tolerate the brief window before migration 0015 lands the column.
+  const archiveLinks = c.web_archive_links ?? [];
 
   const projects = await getProjectsMeta(supabase, { clientId: id });
-
-  const showCreds = can.viewCredentials(profile.role);
-  let credentials: ClientCredential[] = [];
-  if (showCreds) {
-    const { data } = await supabase
-      .from("client_credentials")
-      .select("*")
-      .eq("client_id", id)
-      .order("created_at");
-    credentials = (data as ClientCredential[]) ?? [];
-  }
   const openWork = projects.filter((p) => p.status !== "live").length;
+
+  // Client attachments (staff-only via RLS) + short-lived signed download URLs.
+  const { data: attData } = await supabase
+    .from("client_attachments")
+    .select("*")
+    .eq("client_id", id)
+    .order("created_at", { ascending: false });
+  const attachmentRows = (attData as ClientAttachment[]) ?? [];
+  const signedUrls = await Promise.all(
+    attachmentRows.map((a) =>
+      supabase.storage
+        .from("attachments")
+        .createSignedUrl(a.storage_path, 3600)
+        .then((r) => r.data?.signedUrl ?? null),
+    ),
+  );
+  const attachments: ClientAttachmentItem[] = attachmentRows.map((a, i) => ({
+    id: a.id,
+    file_name: a.file_name,
+    storage_path: a.storage_path,
+    file_size: a.file_size,
+    created_at: a.created_at,
+    url: signedUrls[i],
+  }));
 
   return (
     <div className="detail-top">
@@ -59,11 +100,20 @@ export default async function ClientDetailPage({
         <div className="dh-left">
           <ClientLogo name={c.business_name} size={52} radius={15} />
           <div>
-            <h1 className="title">{c.business_name}</h1>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <h1 className="title">{c.business_name}</h1>
+              {c.client_kind === "old" && (
+                <span className="catpill">{LIFECYCLE_LABEL.old}</span>
+              )}
+            </div>
             <div
               className="muted-sm"
               style={{ marginTop: 5, display: "flex", gap: 16, flexWrap: "wrap" }}
             >
+              <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
+                <Icon d="pin" size={13} />
+                {formatLocation(c)}
+              </span>
               {c.email && (
                 <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
                   <Icon d="mail" size={13} />
@@ -171,6 +221,14 @@ export default async function ClientDetailPage({
               <span className="fw6">{c.contact_name ?? "—"}</span>
             </div>
             <div className="kv-row">
+              <span className="meta-l">Location</span>
+              <span className="fw6">{formatLocation(c)}</span>
+            </div>
+            <div className="kv-row">
+              <span className="meta-l">Client type</span>
+              <span className="fw6">{LIFECYCLE_LABEL[c.client_kind]}</span>
+            </div>
+            <div className="kv-row">
               <span className="meta-l">Status</span>
               <ClientStatusBadge status={c.status} />
             </div>
@@ -195,6 +253,41 @@ export default async function ClientDetailPage({
             </div>
           </div>
 
+          {(archiveLinks.length > 0 || c.last_website_notes) && (
+            <>
+              <div className="sec-head" style={{ marginTop: 22 }}>
+                <h2>Previous website</h2>
+              </div>
+              <div className="panel-card pad">
+                {c.last_website_notes && (
+                  <div className="kv-row">
+                    <span className="muted-sm" style={{ lineHeight: 1.5 }}>
+                      {c.last_website_notes}
+                    </span>
+                  </div>
+                )}
+                {archiveLinks.map((url, i) => (
+                  <div
+                    className={
+                      "kv-row" + (i === archiveLinks.length - 1 ? " no-b" : "")
+                    }
+                    key={url + i}
+                  >
+                    <span className="meta-l">Archive {i + 1}</span>
+                    <a
+                      className="link"
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {url.replace(/^https?:\/\//, "").slice(0, 40)}…
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {c.notes && (
             <>
               <div className="sec-head" style={{ marginTop: 22 }}>
@@ -210,15 +303,13 @@ export default async function ClientDetailPage({
             </>
           )}
 
-          {showCreds && (
-            <div style={{ marginTop: 22 }}>
-              <CredentialsVault
-                clientId={id}
-                credentials={credentials}
-                canManage={can.manageCredentials(profile.role)}
-              />
-            </div>
-          )}
+          <div style={{ marginTop: 22 }}>
+            <ClientAttachments
+              clientId={id}
+              attachments={attachments}
+              canManage={can.manageClients(profile.role)}
+            />
+          </div>
         </div>
       </div>
     </div>

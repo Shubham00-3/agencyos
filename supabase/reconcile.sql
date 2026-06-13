@@ -2,21 +2,22 @@
 -- reconcile.sql  --  ONE-TIME drift fix for the cloud database.
 --
 -- The cloud DB only ever had 0001 + 0002 applied (no migration history),
--- so 0003-0010 never ran there. This script replays the missing migrations
--- in dependency order. It is fully idempotent (create-or-replace /
+-- so later production guardrails never ran there. This script replays the
+-- missing migration effects in dependency order. It is fully idempotent (create-or-replace /
 -- drop-if-exists / add-if-not-exists), so it is safe to run as many times
 -- as you like. 0004/0005 are intentionally omitted -- they add the retired
 -- "uploaded" task stage, which the app no longer uses.
 --
 -- Run once in the Supabase SQL editor. After it succeeds the live schema
--- matches migrations 0001-0010.
+-- matches the core production guardrails through the task evidence gate.
 -- =====================================================================
 
 -- -------------------------------------------------------------------
 -- 0003_readonly_ceo_storage_scope.sql
 -- -------------------------------------------------------------------
 -- Tighten production storage permissions:
--- - Staff (CEO / PA / Admin) keep full operational access.
+-- - Staff can monitor shared files; later sections make the CEO read-only and
+--   keep PA/Admin as operational managers.
 -- - Storage object access is scoped to the task/project the file belongs to.
 
 create or replace function can_manage_work()
@@ -165,6 +166,85 @@ drop trigger if exists trg_task_worker_status on tasks;
 create trigger trg_task_worker_status
   before update on tasks
   for each row execute function enforce_task_worker_status();
+
+-- -------------------------------------------------------------------
+-- 0011_readonly_ceo.sql
+-- -------------------------------------------------------------------
+-- The CEO can see the workspace but cannot mutate operational data. PA/admin
+-- are managers.
+create or replace function can_manage_work()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(auth_role() in ('pa','admin'), false);
+$$;
+
+create or replace function can_work_on_task(tid uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(
+    auth_role() in ('pa','admin')
+    or auth_role() = 'developer'
+    or exists (
+      select 1 from tasks t
+      where t.id = tid and t.assignee_id = auth.uid()
+    ),
+    false
+  );
+$$;
+
+drop policy if exists creds_all on client_credentials;
+drop policy if exists creds_select on client_credentials;
+drop policy if exists creds_write on client_credentials;
+create policy creds_select on client_credentials for select to authenticated
+  using (can_view_credentials());
+create policy creds_write on client_credentials for all to authenticated
+  using (can_manage_work())
+  with check (can_manage_work());
+
+-- -------------------------------------------------------------------
+-- 0012_require_task_evidence_to_start.sql / 0020 guard re-application
+-- -------------------------------------------------------------------
+create or replace function enforce_task_worker_status()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.status is distinct from old.status then
+    if not can_work_on_task(old.id) then
+      raise exception 'Only the assignee or a developer can update task status.';
+    end if;
+
+    if old.status = 'todo' and new.status = 'in_progress'
+       and not exists (
+         select 1 from task_attachments
+         where task_id = old.id
+       )
+       and not exists (
+         select 1 from task_comments
+         where task_id = old.id
+       ) then
+      raise exception 'Add a comment or upload a file before moving this task to in progress.';
+    end if;
+
+    if (new.status = 'done' or old.status = 'in_review')
+       and not (auth_role() in ('pa','admin')) then
+      raise exception 'Only staff can approve or return a task that is in review.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_task_worker_status on tasks;
+create trigger trg_task_worker_status
+  before update on tasks
+  for each row execute function enforce_task_worker_status();
+
+alter table tasks
+  add column if not exists stage text,
+  add column if not exists step_order int;
+
+create unique index if not exists tasks_project_stage_unique_idx
+  on tasks (project_id, stage)
+  where stage is not null;
+
+notify pgrst, 'reload schema';
 
 drop policy if exists tasks_select on tasks;
 create policy tasks_select on tasks for select to authenticated

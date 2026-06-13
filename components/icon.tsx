@@ -122,6 +122,12 @@ const ICONS: Record<string, JSX.Element> = {
       <path d="M5.5 20c0-3.6 3-5.5 6.5-5.5s6.5 1.9 6.5 5.5" />
     </g>
   ),
+  pin: (
+    <g>
+      <path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </g>
+  ),
 };
 
 export function Icon({ d, size }: { d: string; size?: number }) {

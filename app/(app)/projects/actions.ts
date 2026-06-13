@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectStatus, TaskCategory, TaskStatus } from "@/lib/types";
+import { WEBSITE_WORKFLOW } from "@/lib/constants";
+import type {
+  LifecycleKind,
+  ProjectStatus,
+  TaskCategory,
+  TaskStatus,
+} from "@/lib/types";
 
 async function authed() {
   const supabase = await createClient();
@@ -31,6 +37,8 @@ async function ensureProjectMember(
 export async function createProjectAction(input: {
   client_id: string;
   name: string;
+  project_type?: string | null;
+  project_kind?: LifecycleKind;
   description?: string;
 }) {
   const { supabase, user } = await authed();
@@ -40,6 +48,8 @@ export async function createProjectAction(input: {
     .insert({
       client_id: input.client_id,
       name: input.name,
+      project_type: input.project_type || null,
+      project_kind: input.project_kind ?? "new",
       description: input.description || null,
       created_by: user.id,
     })
@@ -48,6 +58,53 @@ export async function createProjectAction(input: {
   if (error) return { error: error.message };
   revalidatePath("/projects");
   return { id: data.id as string };
+}
+
+// Seed the fixed website pipeline as one assignable task per stage. Idempotent
+// per stage: re-running only adds stages that are missing, so existing tasks
+// (and their assignees/progress) are never duplicated or clobbered.
+export async function generateWorkflowAction(input: { project_id: string }) {
+  const { supabase, user } = await authed();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: existing, error: exErr } = await supabase
+    .from("tasks")
+    .select("stage")
+    .eq("project_id", input.project_id)
+    .not("stage", "is", null);
+  if (exErr) return { error: exErr.message };
+
+  const present = new Set(
+    (existing as { stage: string | null }[]).map((t) => t.stage),
+  );
+  const rows = WEBSITE_WORKFLOW.map((step, i) => ({ ...step, order: i }))
+    .filter((step) => !present.has(step.stage))
+    .map((step) => ({
+      project_id: input.project_id,
+      title: step.stage,
+      description: step.description,
+      category: step.category,
+      stage: step.stage,
+      step_order: step.order,
+      status: "todo" as TaskStatus,
+      created_by: user.id,
+    }));
+
+  if (rows.length === 0) return { added: 0 };
+
+  const { error } = await supabase.from("tasks").insert(rows);
+  if (error) {
+    if (error.code === "23505") {
+      revalidatePath(`/projects/${input.project_id}`);
+      revalidatePath("/tasks");
+      return { added: 0 };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath(`/projects/${input.project_id}`);
+  revalidatePath("/tasks");
+  return { added: rows.length };
 }
 
 export async function createTaskAction(input: {
@@ -115,6 +172,8 @@ export async function updateTaskAction(input: {
 export async function updateProjectAction(input: {
   project_id: string;
   name: string;
+  project_type?: string | null;
+  project_kind?: LifecycleKind;
   description?: string | null;
   brief?: Record<string, string> | null;
 }) {
@@ -123,6 +182,8 @@ export async function updateProjectAction(input: {
     .from("projects")
     .update({
       name: input.name,
+      project_type: input.project_type || null,
+      project_kind: input.project_kind ?? "new",
       description: input.description || null,
       brief: input.brief ?? null,
     })
@@ -138,7 +199,42 @@ export async function updateTaskStatusAction(input: {
   project_id: string;
   status: TaskStatus;
 }) {
-  const { supabase } = await authed();
+  const { supabase, user } = await authed();
+  if (!user) return { error: "Not authenticated" };
+
+  if (input.status === "in_progress") {
+    const { data: task, error: taskError } = await supabase
+      .from("tasks")
+      .select("status")
+      .eq("id", input.task_id)
+      .single();
+    if (taskError) return { error: taskError.message };
+
+    if (task?.status === "todo") {
+      const [attachmentsRes, commentsRes] = await Promise.all([
+        supabase
+          .from("task_attachments")
+          .select("id", { count: "exact", head: true })
+          .eq("task_id", input.task_id),
+        supabase
+          .from("task_comments")
+          .select("id", { count: "exact", head: true })
+          .eq("task_id", input.task_id),
+      ]);
+      if (attachmentsRes.error) return { error: attachmentsRes.error.message };
+      if (commentsRes.error) return { error: commentsRes.error.message };
+
+      const evidenceCount =
+        (attachmentsRes.count ?? 0) + (commentsRes.count ?? 0);
+      if (evidenceCount === 0) {
+        return {
+          error:
+            "Add a comment or upload a file before moving this task to in progress.",
+        };
+      }
+    }
+  }
+
   // A change request only applies while the task is being reworked. Moving the
   // task to any other state (e.g. resubmitting for review) clears it.
   const patch: { status: TaskStatus; change_request?: null } = {

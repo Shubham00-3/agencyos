@@ -24,6 +24,10 @@ export default async function ClientsPage() {
     return {
       id: c.id,
       business_name: c.business_name,
+      city: c.city,
+      province: c.province,
+      country: c.country,
+      client_kind: c.client_kind,
       contact_name: c.contact_name,
       email: c.email,
       status: c.status,

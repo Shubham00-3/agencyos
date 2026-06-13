@@ -10,6 +10,9 @@ export type UserRole =
 
 export type ClientStatus = "active" | "completed";
 
+// New vs returning ("old") client/project — separate from active/completed.
+export type LifecycleKind = "new" | "old";
+
 export type ProjectStatus =
   | "not_started"
   | "in_progress"
@@ -39,6 +42,12 @@ export interface Profile {
 export interface Client {
   id: string;
   business_name: string;
+  city: string;
+  province: string | null;
+  country: string | null;
+  client_kind: LifecycleKind;
+  web_archive_links: string[];
+  last_website_notes: string | null;
   contact_name: string | null;
   phone: string | null;
   email: string | null;
@@ -52,6 +61,7 @@ export interface Client {
 export interface ClientCredential {
   id: string;
   client_id: string;
+  project_id: string | null;
   kind: CredentialKind;
   label: string;
   url: string | null;
@@ -74,6 +84,8 @@ export interface Project {
   id: string;
   client_id: string;
   name: string;
+  project_type: string | null;
+  project_kind: LifecycleKind;
   description: string | null;
   status: ProjectStatus;
   brief: ProjectBrief | null;
@@ -91,6 +103,8 @@ export interface Task {
   assignee_id: string | null;
   status: TaskStatus;
   due_date: string | null;
+  stage: string | null;
+  step_order: number | null;
   change_request: string | null;
   created_by: string | null;
   completed_at: string | null;
@@ -100,6 +114,36 @@ export interface Task {
 export interface TaskAttachment {
   id: string;
   task_id: string;
+  file_name: string;
+  storage_path: string;
+  file_size: number | null;
+  mime_type: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export type TranscriptStatus = "none" | "processing" | "done" | "failed";
+
+export interface Communication {
+  id: string;
+  project_id: string;
+  kind: string;
+  title: string | null;
+  audio_path: string | null;
+  duration_seconds: number | null;
+  language_hint: string;
+  transcript: string | null;
+  transcript_edited: boolean;
+  transcript_status: TranscriptStatus;
+  summary: string | null;
+  occurred_at: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ClientAttachment {
+  id: string;
+  client_id: string;
   file_name: string;
   storage_path: string;
   file_size: number | null;

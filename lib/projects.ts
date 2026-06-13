@@ -1,10 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ProjectStatus } from "./types";
+import type { LifecycleKind, ProjectStatus } from "./types";
 import { isOverdue } from "./format";
 
 export type ProjectMeta = {
   id: string;
   name: string;
+  project_type: string | null;
+  project_kind: LifecycleKind;
   description: string | null;
   status: ProjectStatus;
   client: { id: string; business_name: string } | null;
@@ -31,7 +33,7 @@ export async function getProjectsMeta(
 ): Promise<ProjectMeta[]> {
   let pq = supabase
     .from("projects")
-    .select("id, name, description, status, created_at, client:clients(id, business_name)")
+    .select("id, name, project_type, project_kind, description, status, created_at, client:clients(id, business_name)")
     .order("created_at", { ascending: false });
   if (opts.clientId) pq = pq.eq("client_id", opts.clientId);
 
@@ -46,6 +48,8 @@ export async function getProjectsMeta(
   const projects = (projRes.data as unknown as {
     id: string;
     name: string;
+    project_type: string | null;
+    project_kind: LifecycleKind;
     description: string | null;
     status: ProjectStatus;
     created_at: string;
@@ -97,6 +101,8 @@ export async function getProjectsMeta(
     return {
       id: p.id,
       name: p.name,
+      project_type: p.project_type,
+      project_kind: p.project_kind,
       description: p.description,
       status: p.status,
       client: p.client,

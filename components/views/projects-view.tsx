@@ -9,6 +9,7 @@ import { ClientLogo, AvatarStack, Progress, Due } from "@/components/design";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/page-header";
 import { useSearch, matches } from "@/components/search/search-context";
+import { LIFECYCLE_LABEL } from "@/lib/constants";
 
 const FILTERS: [ProjectStatus | "all", string][] = [
   ["all", "All"],
@@ -60,6 +61,16 @@ export function ProjectsView({ projects }: { projects: ProjectMeta[] }) {
               </div>
               <div>
                 <div className="ptitle">{p.name}</div>
+                {p.project_type && (
+                  <span className="catpill" style={{ marginTop: 4 }}>
+                    {p.project_type}
+                  </span>
+                )}
+                {p.project_kind === "old" && (
+                  <span className="catpill" style={{ marginTop: 4 }}>
+                    {LIFECYCLE_LABEL.old}
+                  </span>
+                )}
                 {p.description && <div className="pdesc">{p.description}</div>}
               </div>
               <Progress value={p.progress} live={p.status === "live"} />

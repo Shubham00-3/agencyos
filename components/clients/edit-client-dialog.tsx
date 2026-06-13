@@ -26,21 +26,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import type { Client, ClientStatus } from "@/lib/types";
+import { Separator } from "@/components/ui/separator";
+import {
+  LifecycleToggle,
+  WebArchiveLinksInput,
+} from "@/components/clients/client-fields";
+import type { Client, ClientStatus, LifecycleKind } from "@/lib/types";
 
 export function EditClientDialog({ client }: { client: Client }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<ClientStatus>(client.status);
+  const [kind, setKind] = useState<LifecycleKind>(client.client_kind ?? "new");
+  const [archiveLinks, setArchiveLinks] = useState<string[]>(
+    client.web_archive_links?.length ? client.web_archive_links : [""],
+  );
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const get = (k: string) => (fd.get(k) as string)?.trim() || undefined;
+    const city = get("city");
+    if (!city) return toast.error("City is required");
     setLoading(true);
     const res = await updateClientAction(client.id, {
       business_name: get("business_name")!,
+      city,
+      province: get("province"),
+      country: get("country"),
+      client_kind: kind,
+      web_archive_links: archiveLinks,
+      last_website_notes: get("last_website_notes"),
       contact_name: get("contact_name"),
       phone: get("phone"),
       email: get("email"),
@@ -67,14 +84,46 @@ export function EditClientDialog({ client }: { client: Client }) {
             <DialogTitle>Edit client</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="business_name">Business name</Label>
-              <Input
-                id="business_name"
-                name="business_name"
-                defaultValue={client.business_name}
-                required
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="business_name">Business name</Label>
+                <Input
+                  id="business_name"
+                  name="business_name"
+                  defaultValue={client.business_name}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  defaultValue={client.city ?? ""}
+                  placeholder="Toronto"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="province">Province / State</Label>
+                <Input
+                  id="province"
+                  name="province"
+                  defaultValue={client.province ?? ""}
+                  placeholder="Ontario"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  name="country"
+                  defaultValue={client.country ?? ""}
+                  placeholder="Canada"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -125,6 +174,21 @@ export function EditClientDialog({ client }: { client: Client }) {
                 </SelectContent>
               </Select>
             </div>
+            <LifecycleToggle label="Client type" value={kind} onChange={setKind} />
+
+            <Separator />
+            <WebArchiveLinksInput value={archiveLinks} onChange={setArchiveLinks} />
+            <div className="space-y-1.5">
+              <Label htmlFor="last_website_notes">Last website notes</Label>
+              <Textarea
+                id="last_website_notes"
+                name="last_website_notes"
+                defaultValue={client.last_website_notes ?? ""}
+                placeholder="What was on their previous site, what to carry over…"
+              />
+            </div>
+
+            <Separator />
             <div className="space-y-1.5">
               <Label htmlFor="notes">Notes</Label>
               <Textarea

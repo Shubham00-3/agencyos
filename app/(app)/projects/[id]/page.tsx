@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/permissions";
 import { isOverdue } from "@/lib/format";
 import type {
+  ClientCredential,
+  Communication,
   Profile,
   Project,
   ProjectStatus,
@@ -12,7 +13,12 @@ import type {
   TaskComment,
 } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DetailUnavailable } from "@/components/detail-unavailable";
 import { ProjectDetailView } from "@/components/projects/project-detail-view";
+import {
+  CommunicationsPanel,
+  type CommunicationItem,
+} from "@/components/projects/communications-panel";
 
 export type AttachmentWithUrl = TaskAttachment & { url: string | null };
 export type CommentWithAuthor = TaskComment & {
@@ -37,14 +43,15 @@ export default async function ProjectDetailPage({
       .from("projects")
       .select("*, client:clients(id, business_name, status)")
       .eq("id", id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from("tasks")
       .select(
         "*, assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_color)",
       )
       .eq("project_id", id)
-      .order("due_date", { ascending: true, nullsFirst: false }),
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("step_order", { ascending: true, nullsFirst: false }),
     supabase
       .from("project_members")
       .select("user:profiles!project_members_user_id_fkey(*)")
@@ -54,7 +61,29 @@ export default async function ProjectDetailPage({
       : Promise.resolve({ data: null }),
   ]);
 
-  if (!projectRes.data) notFound();
+  if (projectRes.error) {
+    return (
+      <DetailUnavailable
+        eyebrow="Project"
+        title="Project could not be loaded"
+        message="The project detail page received an error from Supabase. This is usually a migration, schema-cache, or permission issue rather than a missing page."
+        backHref="/projects"
+        backLabel="Projects"
+        error={projectRes.error.message}
+      />
+    );
+  }
+  if (!projectRes.data) {
+    return (
+      <DetailUnavailable
+        eyebrow="Project"
+        title="Project is not available"
+        message="This project was not found or your current role cannot open it. Go back to the project list or switch to a manager account."
+        backHref="/projects"
+        backLabel="Projects"
+      />
+    );
+  }
   const project = projectRes.data as Project & {
     client: { id: string; business_name: string; status: string } | null;
   };
@@ -101,6 +130,49 @@ export default async function ProjectDetailPage({
     ) ?? [];
   const team: Profile[] = (teamRes.data as Profile[] | null) ?? members;
 
+  // Credentials are project-scoped and staff-only (RLS enforces this too).
+  const showCreds = can.viewCredentials(profile.role);
+  let credentials: ClientCredential[] = [];
+  if (showCreds) {
+    const { data } = await supabase
+      .from("client_credentials")
+      .select("*")
+      .eq("project_id", id)
+      .order("created_at");
+    credentials = (data as ClientCredential[]) ?? [];
+  }
+
+  // Communications (recorded calls) — visible to staff + project members.
+  const { data: commData } = await supabase
+    .from("communications")
+    .select("*")
+    .eq("project_id", id)
+    .order("occurred_at", { ascending: false });
+  const commRows = (commData as Communication[]) ?? [];
+  const commSignedUrls = await Promise.all(
+    commRows.map((c) =>
+      c.audio_path
+        ? supabase.storage
+            .from("attachments")
+            .createSignedUrl(c.audio_path, 3600)
+            .then((r) => r.data?.signedUrl ?? null)
+        : Promise.resolve(null),
+    ),
+  );
+  const communications: CommunicationItem[] = commRows.map((c, i) => ({
+    id: c.id,
+    title: c.title,
+    audio_url: commSignedUrls[i],
+    audio_path: c.audio_path,
+    duration_seconds: c.duration_seconds,
+    language_hint: c.language_hint,
+    transcript: c.transcript,
+    transcript_edited: c.transcript_edited,
+    transcript_status: c.transcript_status,
+    summary: c.summary,
+    occurred_at: c.occurred_at,
+  }));
+
   // Derived meta
   const done = tasks.filter((t) => t.status === "done").length;
   const progress =
@@ -144,6 +216,8 @@ export default async function ProjectDetailPage({
         project={{
           id: project.id,
           name: project.name,
+          project_type: project.project_type,
+          project_kind: project.project_kind,
           description: project.description,
           status: project.status as ProjectStatus,
           brief: project.brief,
@@ -152,6 +226,16 @@ export default async function ProjectDetailPage({
             : null,
         }}
         meta={meta}
+        credentials={credentials}
+        showCredentials={showCreds}
+        canManageCredentials={can.manageCredentials(profile.role)}
+        communicationsSlot={
+          <CommunicationsPanel
+            projectId={project.id}
+            communications={communications}
+            canManage={isStaffUser}
+          />
+        }
         tasks={tasks}
         attachmentsByTask={attachmentsByTask}
         commentsByTask={commentsByTask}
